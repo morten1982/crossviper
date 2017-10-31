@@ -22,6 +22,8 @@ You need "pygments" for syntax highlighting
 
 only tkinter is used with python 3.x 
  
- 
+ # to do
+ - > When openning a bigger code-file, syntax highligting needs some time to load -> this should be faster
+ - > tabs are ordered in a stack -> you can close only the last opened tab
  
  
