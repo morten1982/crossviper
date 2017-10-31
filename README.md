@@ -1,6 +1,7 @@
 # crossviper
 Tkinter Python IDE
 
+![alt text](https://github.com/morten1982/crossviper/blob/master/images/crossviper_git.png)
 
 # Description
 A Python IDE made with tkinter.
