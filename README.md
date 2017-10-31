@@ -20,7 +20,7 @@ You need "pygments" for syntax highlighting
 - > pip3 install pygments
  
 
-only tkinter is used
+only tkinter is used with python 3.x 
  
  
  
