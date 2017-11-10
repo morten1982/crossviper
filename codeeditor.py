@@ -302,10 +302,11 @@ class TextPad(tk.Text):
         return 'break'
     
     def highlightThisLine(self, event=None):
-        # bisher micht funktionsfähig !!
-        index = self.index(tk.INSERT).split(".")
-        line = int(index[0])
-        #line -= 1
+        index = self.index('insert linestart')
+        line = index.split('.')[0]
+        
+        line = int(line)
+        
         
         if line > 0:
             self.highlight(lineNumber=line)
