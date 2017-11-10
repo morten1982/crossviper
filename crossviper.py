@@ -1178,71 +1178,38 @@ class RightPanel(tk.Frame):
         
         
     def undo(self, event=None):
-
-        x = self.textPad.edit_modified()
-        index = self.textPad.index('insert-1c')[0]
+        index = self.textPad.index("insert linestart")
+        line = index.split('.')[0]
+      
+        line = int(line)
         
-        self.extraThing = False
+        try:
+            self.textPad.edit_undo()
+            self.textPad.focus_set()
+            self.textPad.highlight(lineNumber=line)
+            self.textPad.highlightThisLine()
         
-        a = int(index) - 15
-        b = int(index) + 25
+        except Exception as e:
+            tk.messagebox.showinfo('Error', str(e))
         
-        if x > 0:
-            try:
-                self.textPad.edit_undo()
-                self.textPad.update()
         
-                if a < 1:
-                    a = 1
-                    self.extraThing = False
-                if b > int(self.textPad.index("end-1c").split('.')[0]):
-                    b = int( self.textPad.index("end-1c").split('.')[0])
-                    self.extraThing = False
-
-                if (a == 1) and (b == int(self.textPad.index("end-1c").split('.')[0])):
-                    self.extraThing = True
-            
-                code = self.textPad.get(str(a) + '.0', str(b) + '.0 lineend')
-            
-                while a < b:
-                    self.textPad.mark_set("insert", "%d.%d" % (a, 0))
-                    self.textPad.highlight()
-                    a += 1
-            
-            except Exception as e:
-                 tk.messagebox.showinfo("Error", str(e))
-
-
+    
     def redo(self, event=None):
-        x = self.textPad.edit_modified()
-        index = self.textPad.index('insert-1c')[0]
-        a = int(index) - 15
-        b = int(index) + 25
-        #print(a)
-        #print(b)
+        #x = self.textPad.edit_modified()
+        index = self.textPad.index('insert linestart')
+        line = index.split('.')[0]
+        
+        line = int(line)
         
         try:
             self.textPad.edit_redo()
-            self.textPad.update()
-            
-            if a < 1:
-                a = 1
-            if b > int(self.textPad.index("end-1c").split('.')[0]):
-                b = int( self.textPad.index("end-1c").split('.')[0])
-            if self.extraThing:
-                self.extraThing = False
-                self.textPad.highlightAll()
-            
-            code = self.textPad.get(str(a) + '.0', str(b) + '.0 lineend')
-            
-            while a < b:
-                self.textPad.mark_set("insert", "%d.%d" % (a, 0))
-                self.textPad.highlight()
-                a += 1
-
-            
+            self.textPad.focus_set()
+            self.textPad.highlight(lineNumber=line)
+            self.textPad.highlightThisLine()
+        
         except Exception as e:
-             tk.messagebox.showinfo("Error", str(e))
+            tk.messagebox.showinfo('Error', str(e))
+        
         
     def zoomIn(self, event=None):
         if self.textPad.fontSize < 30:
