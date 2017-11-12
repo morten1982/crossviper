@@ -375,13 +375,12 @@ class TextPad(tk.Text):
             self.mark_set("range_start", str(line_no) + '.0')
         
         elif lineNumber is not None:
-            #print('there')
-            #print('linenumber', lineNumber)
             line_text = self.get("%d.%d" % (lineNumber, 0), "%d.end" % (lineNumber))
             self.mark_set("range_start", str(lineNumber) + '.0')
 
         for token, content in lex(line_text, PythonLexer()):
-            #print(token)
+            # Debug
+            print(token)
             self.tag_configure("Token.Name", foreground="#FFFFFF")
             self.tag_configure("Token.Text", foreground="#FFFFFF")
             
@@ -399,6 +398,8 @@ class TextPad(tk.Text):
             self.tag_configure("Token.Name.Exception", foreground="#ddd313")
             self.tag_configure("Token.Name.Function", foreground="#298fb5")
             self.tag_configure("Token.Name.Function.Magic", foreground="#298fb5")
+            self.tag_configure("Token.Name.Decorator", foreground="#298fb5")
+
                         
             self.tag_configure("Token.Name.Builtin", foreground="#CC7A00")
             self.tag_configure("Token.Name.Builtin.Pseudo", foreground="#CC7A00")
@@ -410,15 +411,12 @@ class TextPad(tk.Text):
             self.tag_configure("Token.Comment", foreground="#767d87")
             self.tag_configure("Token.Comment.Single", foreground="#767d87")
             self.tag_configure("Token.Comment.Double", foreground="#767d87")
-            #self.tag_configure("Token.Comment.Triple", foreground="#767d87")
-
-            #
-            #self.tag_configure("Token.Literal.String.Double", foreground="#2e8229")
-            #self.tag_configure("Token.Literal.String.Single", foreground="#2e8229")
-            #
 
             self.tag_configure("Token.Literal.Number.Integer", foreground="#88daea")
             self.tag_configure("Token.Literal.Number.Float", foreground="#88daea")
+            self.tag_configure("Token.Literal.String.Single", foreground="#35c666")
+            self.tag_configure("Token.Literal.String.Double", foreground="#35c666")
+
 
             self.mark_set("range_end", "range_start + %dc" % len(content))
             self.tag_add(str(token), "range_start", "range_end")
