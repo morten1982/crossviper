@@ -93,8 +93,10 @@ class TextPad(tk.Text):
         self.bind('<Tab>', self.tab)
         self.bind('<BackSpace>', self.backtab)
         self.bind('<KeyRelease>', self.highlight)
-        self.bind('<KeyPress>', self.highlight)
+        #self.bind('<KeyPress>', self.highlight)
         #self.bind('<KeyPress-Return>', self.getDoublePoint)
+        self.bind('<KeyRelease-Down>', self.correctLine)
+        self.bind('<KeyRelease-Up>', self.correctLineUp)
         self.bind('<Key>', self.updateAutocompleteEntry, add='+')
         #self.bind('<space>', self.highlight)
         
@@ -108,6 +110,15 @@ class TextPad(tk.Text):
         self.tag_config("sel", background="#47494c", foreground="white")
         
 
+    def highlightLastLine(self, event):
+        #key = event.keycode
+        
+        #currentLine = int(self.index('insert')[0])
+        #lastLine = currentLine - 1
+        #if lastLine >= 1:
+        self.correctLine()
+        #else:
+        #    return
     
     def updateAutoCompleteList(self, event=None):
         '''
@@ -312,7 +323,7 @@ class TextPad(tk.Text):
             self.highlight(lineNumber=line)
 
     
-    def correctLine(self):
+    def correctLine(self, event=None):
         index = self.index(tk.INSERT).split(".")
         line = int(index[0])
         line -= 1
@@ -323,6 +334,18 @@ class TextPad(tk.Text):
         if line > 0:
             self.highlight(lineNumber=line)
 
+    def correctLineUp(self, event=None):
+        index = self.index(tk.INSERT).split(".")
+        line = int(index[0])
+        line += 1
+        line_text = self.get("%d.%d" % (line, 0), "%d.end" % (line))
+        self.delete("%d.0" % (line), "%d.end" %(line))
+        self.insert("%d.0" % (line), line_text)        
+        
+        if line > 0:
+            self.highlight(lineNumber=line)
+
+    
     
     def tab(self, event):
         '''
@@ -370,7 +393,6 @@ class TextPad(tk.Text):
         index = self.index(tk.INSERT).split(".")
         line_no = int(index[0])
         if lineNumber == None:
-            #print('here')
             line_text = self.get("%d.%d" % (line_no, 0),  "%d.end" % (line_no))
             self.mark_set("range_start", str(line_no) + '.0')
         
@@ -380,10 +402,10 @@ class TextPad(tk.Text):
 
         for token, content in lex(line_text, PythonLexer()):
             # Debug
-            print(token)
+            #print(token)
             self.tag_configure("Token.Name", foreground="#FFFFFF")
             self.tag_configure("Token.Text", foreground="#FFFFFF")
-            
+
             self.tag_configure("Token.Keyword", foreground="#CC7A00")
             self.tag_configure("Token.Keyword.Constant", foreground="#CC7A00")
             self.tag_configure("Token.Keyword.Declaration", foreground="#CC7A00")
@@ -414,8 +436,10 @@ class TextPad(tk.Text):
 
             self.tag_configure("Token.Literal.Number.Integer", foreground="#88daea")
             self.tag_configure("Token.Literal.Number.Float", foreground="#88daea")
+            # 
             self.tag_configure("Token.Literal.String.Single", foreground="#35c666")
             self.tag_configure("Token.Literal.String.Double", foreground="#35c666")
+
 
 
             self.mark_set("range_end", "range_start + %dc" % len(content))
