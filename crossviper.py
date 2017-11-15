@@ -287,7 +287,7 @@ class LeftPanel(tk.Frame):
             else:
                 filename = text
             text = self.checkPath(text)
-            infodialog = InfoDialog(self, title='Info', text=text, directory=directory, file=file, size=size)
+            InfoDialog(self, title='Info', text=text, directory=directory, file=file, size=size)
         
         else:
             return
@@ -783,7 +783,7 @@ class RightPanel(tk.Frame):
         textPad.bind('<Control-Key-p>', self.print)
         textPad.bind('<Control-Key-z>', self.undo)
         textPad.bind('<Control-Shift_L><Z>', self.redo)
-        #textPad.bind('<Alt-+>', self.nextTab)
+        #textPad.bind('<Alt><+>', self.nextTab)
         textPad.bind('<Control-Key-f>', self.showSearch)
         textPad.bind('<Control-Key-g>', self.overview)
         textPad.bind('<F12>', self.settings)
@@ -1251,27 +1251,46 @@ class RightPanel(tk.Frame):
             self.textPad.mark_set('insert', end)
             self.textPad.see(tk.INSERT)
             self.textPad.focus_force()
+            self.searchBox.focus()
         else:
             self.textPad.mark_set('insert', '1.0')
             self.textPad.see(tk.INSERT)
             self.textPad.focus()
-            self.setMessage('<END>', 800)
+            self.setEndMessage(400)
+            self.searchBox.focus()
             return
 
         
         
-    def setMessage(self, text, seconds):
-            self.textPad.entry.config(text=text)
+    def setEndMessage(self, seconds):
+            pathList = __file__.replace('\\', '/')
+            pathList = __file__.split('/')[:-1]
+        
+            self.dir = ''
+            for item in pathList:
+                self.dir += item + '/'
+            print(self.dir)
+            #self.textPad.entry.config(text=text)
+            #self.textPad.update()
+            canvas = tk.Canvas(self.textPad, width=64, height=64)
+            x = self.textPad.winfo_width() / 2
+            y = self.textPad.winfo_height() / 2
+            print('x', x)
+            print('y', y)
+            canvas.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+            #canvas.create_line(0, 50, 200, 50, fill="#476042")
+            image = tk.PhotoImage(file = self.dir + 'images/last.png')
+            canvas.create_image(0, 0,  anchor=tk.NW, image=image)
             self.textPad.update()
             self.after(seconds, self.textPad.entry.config(text='---'))
+            canvas.destroy()
             self.textPad.update()
 
     
 
-    
                 
     def overview(self, event=None):
-        view = ViewDialog(self.textPad, "Class - Overview", self.textPad)
+        ViewDialog(self.textPad, "Class - Overview", self.textPad)
         
     
     def interpreter(self):

@@ -92,8 +92,8 @@ class TextPad(tk.Text):
         self.bind('<Return>', self.indent, add='+')
         self.bind('<Tab>', self.tab)
         self.bind('<BackSpace>', self.backtab)
-        self.bind('<KeyRelease>', self.highlight)
-        #self.bind('<KeyPress>', self.highlight)
+        self.bind('<KeyRelease>', self.highlight, add='+')
+        self.bind('<KeyPress>', self.correctThisLine)
         #self.bind('<KeyPress-Return>', self.getDoublePoint)
         self.bind('<KeyRelease-Down>', self.correctLine)
         self.bind('<KeyRelease-Up>', self.correctLineUp)
@@ -110,15 +110,6 @@ class TextPad(tk.Text):
         self.tag_config("sel", background="#47494c", foreground="white")
         
 
-    def highlightLastLine(self, event):
-        #key = event.keycode
-        
-        #currentLine = int(self.index('insert')[0])
-        #lastLine = currentLine - 1
-        #if lastLine >= 1:
-        self.correctLine()
-        #else:
-        #    return
     
     def updateAutoCompleteList(self, event=None):
         '''
@@ -313,6 +304,7 @@ class TextPad(tk.Text):
         return 'break'
     
     def highlightThisLine(self, event=None):
+
         index = self.index('insert linestart')
         line = index.split('.')[0]
         
@@ -344,7 +336,19 @@ class TextPad(tk.Text):
         
         if line > 0:
             self.highlight(lineNumber=line)
+    
+    def correctThisLine(self, event=None):
+        ' to do   !!    -> event for <Key-Release>'
+        key = event.keycode
+        line = int(self.index(tk.INSERT).split('.')[0])
+        line_text = self.get("%d.%d" % (line, 0), "%d.end" % (line))
 
+        if key == 51:
+            if line > 0:
+                self.highlight(lineNumber=line)
+
+
+        
     
     
     def tab(self, event):
@@ -390,6 +394,7 @@ class TextPad(tk.Text):
         '''
             highlight the line where the cursor is ...
         '''
+        
         index = self.index(tk.INSERT).split(".")
         line_no = int(index[0])
         if lineNumber == None:
