@@ -17,7 +17,8 @@ import zipfile
 from codeeditor import TextLineNumbers, TextPad
 from configuration import Configuration
 from dialog import (SettingsDialog, ViewDialog, 
-                    InfoDialog, NewDirectoryDialog, HelpDialog)
+                    InfoDialog, NewDirectoryDialog, HelpDialog,
+                    GotoDialog)
 
 ###################################################################
 class RunThread(threading.Thread):
@@ -474,6 +475,9 @@ class LeftPanel(tk.Frame):
 
     
     def treePopUp(self, event):
+        item = self.tree.identify('item',event.x,event.y)
+        self.tree.selection_set(item)
+            
         menu = tk.Menu(self, tearoff=False)
         menu.add_command(label='Info', compound=tk.LEFT, command=self.treeGenerateInfo)
         menu.add_separator()
@@ -625,7 +629,7 @@ class RightPanel(tk.Frame):
         self.linenumber.pack(side="left", fill="y")
         
         self.linenumber.bind('<ButtonRelease-1>', self.linenumberSelect)
-        
+        self.linenumber.bind('<ButtonRelease-3>', self.linenumberPopUp)
         
         # hold textPad and linenumber-widget
         self.TEXTPADS = {}
@@ -851,6 +855,12 @@ class RightPanel(tk.Frame):
         
         self.tabChanged()
     
+    def linenumberPopUp(self, event):
+        menu = tk.Menu(self.notebook, tearoff=False)
+        menu.add_command(label='Goto', compound=tk.LEFT, command=self.textPadGenerateGoto)
+        menu.tk_popup(event.x_root, event.y_root, 0)
+
+    
     def textPadPopUp(self, event):
         menu = tk.Menu(self.notebook, tearoff=False)
         menu.add_command(label='Cut', compound=tk.LEFT, command=self.textPadGenerateCut)
@@ -859,6 +869,8 @@ class RightPanel(tk.Frame):
         menu.add_separator()
         menu.add_command(label="Select All", compound=tk.LEFT, command=self.textPadSelectAll)
         menu.add_command(label="Highlight All", compound=tk.LEFT, command=self.textPadHighlightAll)
+        menu.add_separator()
+        menu.add_command(label='Goto', compound=tk.LEFT, command=self.textPadGenerateGoto)
         menu.add_separator()
         menu.add_command(label="Open Terminal", compound=tk.LEFT, command = self.terminal)
         menu.tk_popup(event.x_root, event.y_root, 0)
@@ -890,6 +902,9 @@ class RightPanel(tk.Frame):
     def textPadSelectAll(self):
         self.textPad.tag_add('sel', '1.0', 'end')
         self.textPad.focus_force()
+    
+    def textPadGenerateGoto(self, event=None):
+        GotoDialog(self.textPad)
     
     def linenumberSelect(self, event):
         obj = event.widget.find_overlapping(event.x, event.y, event.x, event.y)
@@ -1260,7 +1275,12 @@ class RightPanel(tk.Frame):
             self.searchBox.focus()
             return
 
-        
+    
+    def setMessage(self, text, seconds):
+            self.textPad.entry.config(text=text)
+            self.textPad.update()
+            self.after(seconds, self.textPad.entry.config(text='---'))
+            self.textPad.update()
         
     def setEndMessage(self, seconds):
             pathList = __file__.replace('\\', '/')

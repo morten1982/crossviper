@@ -696,3 +696,104 @@ class HelpDialog(tk.Toplevel):
         # put focus back to the parent window
         self.parent.focus_set()
         self.destroy()
+
+########################################################
+class GotoDialog(tk.Toplevel):
+
+    def __init__(self, parent, title="Select Linennumber"):
+        super().__init__(parent)
+        self.transient(parent)
+        
+        self.Pad = parent
+        
+        
+        if not self.Pad:
+            self.cancel()
+        
+        if title:
+            self.title(title)
+
+        self.parent = parent
+
+        body = tk.Frame(self)
+        self.initial_focus = self.body(body)
+        body.pack(padx=5, pady=5)
+
+        self.buttonbox()
+
+        self.grab_set()
+
+        if not self.initial_focus:
+            self.initial_focus = self
+
+        self.protocol("WM_DELETE_WINDOW", self.cancel)
+
+        self.geometry("+%d+%d" % (parent.winfo_rootx()+50,
+                                  parent.winfo_rooty()+50))
+
+
+        self.initial_focus.focus_set()
+        self.wait_window(self)
+
+    
+    def body(self, master):
+        # get configuration 
+        self.master = master
+
+        # make body
+        tk.Label(master, text="Goto Linenumber:").grid(row=0)
+        
+        self.e1 = tk.Entry(master)
+        
+        index = int(self.Pad.index("end-1c linestart").split('.')[0])
+        print('index', index)
+        
+        self.spinbox = tk.Spinbox(master, from_=1, to=index)
+        self.spinbox.grid(row=0, column=1, sticky='nsew')
+        
+        #self.bind("<Return>", self.apply)
+        #self.bind("<Escape>", self.cancel)
+
+
+        return self.spinbox # initial focus
+
+    def buttonbox(self):
+        # add standard button box. override if you don't want the
+        # standard buttons
+
+        box = tk.Frame(self)
+
+        w = tk.Button(box, text="OK", width=10, command=self.apply, default=tk.ACTIVE)
+        w.pack(side=tk.LEFT, padx=5, pady=5)
+        w = tk.Button(box, text="Cancel", width=10, command=self.cancel)
+        w.pack(side=tk.LEFT, padx=5, pady=5)
+
+
+        box.pack()
+
+
+
+    def apply(self):
+        number = int(self.spinbox.get())
+        print('number', number)
+        
+        try:
+            self.Pad.mark_set("insert", "%d.0" % (number))
+        except Exception as e:
+            print(str(e))
+            
+        self.Pad.see(tk.INSERT)
+        self.Pad.focus_set()
+        
+        self.cancel()
+        
+    
+    def cancel(self, event=None):
+
+        # put focus back to the parent window
+        self.parent.focus_set()
+        self.destroy()
+
+
+
+##########################################################
