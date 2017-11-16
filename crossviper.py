@@ -195,6 +195,11 @@ class LeftPanel(tk.Frame):
             dir = self.checkPath(os.getcwd())
             self.master.master.master.title(dir + '/' + self.checkPath(self.tree.item(item, 'text')))
         #print(item)
+    
+    def ignore(self, event):
+        # workaround for dismiss OnDoubleClickTreeview to open file twice 
+        # step 1
+        return 'break'
 
     def OnDoubleClickTreeview(self, event):
         item = self.tree.identify('item',event.x,event.y)
@@ -247,14 +252,23 @@ class LeftPanel(tk.Frame):
             dir = self.checkPath(dir)
             filename = dir + '/' + file
             self.tree.config(cursor="X_cursor")
+            self.tree.bind('<Double-1>', self.ignore)
+
             self.master.master.rightPanel.open(file=filename)
             self.tree.config(cursor='')
             self.tree.update()
             self.rightPanel.textPad.mark_set("insert", "1.0")
             self.master.master.master.title(filename)
             self.rightPanel.textPad.focus_set()
-
-
+            
+            # workaround 
+            # step 2
+            self.tree.after(1000, self.bindit)
+    
+    def bindit(self):
+        # workaround 
+        # step 3
+        self.tree.bind('<Double-1>', self.OnDoubleClickTreeview)
 
     def checkPath(self, path):
         if '\\' in path:
@@ -1079,7 +1093,9 @@ class RightPanel(tk.Frame):
                     self.master.master.master.title('Loading ...')
                     self.textPad.config(cursor="X_cursor")
                     self.textPad.update()
-                    
+                    #t1 = threading.Thread(target=self.textPad.highlightAll)
+                    #t1.start()
+                    #t1.join()
                     self.textPad.highlightAll()
                     
                     self.textPad.config(cursor='xterm')
