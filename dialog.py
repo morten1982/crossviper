@@ -719,6 +719,7 @@ class GotoDialog(tk.Toplevel):
         self.initial_focus = self.body(body)
         body.pack(padx=5, pady=5)
 
+
         self.buttonbox()
 
         self.grab_set()
@@ -743,17 +744,12 @@ class GotoDialog(tk.Toplevel):
         # make body
         tk.Label(master, text="Goto Linenumber:").grid(row=0)
         
-        self.e1 = tk.Entry(master)
+        #self.e1 = tk.Entry(master)
         
         index = int(self.Pad.index("end-1c linestart").split('.')[0])
-        print('index', index)
         
         self.spinbox = tk.Spinbox(master, from_=1, to=index)
         self.spinbox.grid(row=0, column=1, sticky='nsew')
-        
-        #self.bind("<Return>", self.apply)
-        #self.bind("<Escape>", self.cancel)
-
 
         return self.spinbox # initial focus
 
@@ -774,8 +770,13 @@ class GotoDialog(tk.Toplevel):
 
 
     def apply(self):
-        number = int(self.spinbox.get())
-        print('number', number)
+        number = self.spinbox.get()
+        if number.isnumeric():
+            number = int(number)
+        else:
+            return
+        
+        #print('number', number)
         
         try:
             self.Pad.mark_set("insert", "%d.0" % (number))
