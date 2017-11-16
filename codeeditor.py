@@ -98,6 +98,9 @@ class TextPad(tk.Text):
         self.bind('<KeyRelease-Down>', self.correctLine)
         self.bind('<KeyRelease-Up>', self.correctLineUp)
         self.bind('<Key>', self.updateAutocompleteEntry, add='+')
+        self.bind('<Control-x>', self.cut)
+        self.bind('<Control-c>', self.copy)
+        self.bind('<Control-v>', self.paste)
         #self.bind('<space>', self.highlight)
         
         self.autocompleteList = []
@@ -238,8 +241,11 @@ class TextPad(tk.Text):
         codelines = code.splitlines()
         for item in codelines:
             self.insert(tk.INSERT, item)
-            self.highlight()
             self.insert(tk.INSERT, '\n')
+            index = self.index('insert linestart')
+            line = index.split('.')[0]
+            line = int(line) - 1
+            self.highlight(lineNumber=line)
             self.see(tk.INSERT)
         return 'break'
     
@@ -257,6 +263,7 @@ class TextPad(tk.Text):
         '''
         if self.tag_ranges("sel"):
             self.clipboard = self.get(tk.SEL_FIRST, tk.SEL_LAST)
+            self.delete(tk.SEL_FIRST, tk.SEL_LAST)
         else:
             return 'break'
 
@@ -467,6 +474,9 @@ class TextPad(tk.Text):
             i += 1
         self.index("1.0")
         self.update()
+    
+    def highlightAllOpen(self, code):
+        pass
 
     def configFont(self):
         '''

@@ -876,16 +876,19 @@ class RightPanel(tk.Frame):
         menu.tk_popup(event.x_root, event.y_root, 0)
 
     def textPadGenerateCut(self, event=None):
-        self.textPad.event_generate('<<Cut>>')
+        #self.textPad.event_generate('<<Cut>>')
+        self.textPad.cut()
         return 'break'
     
     def textPadGenerateCopy(self, event=None):
-        self.textPad.event_generate('<<Copy>>')
+        #self.textPad.event_generate('<<Copy>>')
+        self.textPad.copy()
         return 'break'
 
         
     def textPadGeneratePaste(self, event=None):
-        self.textPad.event_generate('<<Paste>>')
+        #self.textPad.event_generate('<<Paste>>')
+        self.textPad.paste()
         return 'break'
 
     
@@ -1059,6 +1062,8 @@ class RightPanel(tk.Frame):
                 makeNew = False
             try:
                 with open(filename, 'r') as f:
+                    #code = f.read().splitlines()
+                    #print(code)
                     text = f.read()
                     if makeNew:
                         self.new()
@@ -1068,10 +1073,15 @@ class RightPanel(tk.Frame):
                     self.update()
                     self.tabChanged()
                     self.textPad.delete('1.0', tk.END)
+                    
                     self.textPad.insert("1.0", text)
+                    
                     self.master.master.master.title('Loading ...')
                     self.textPad.config(cursor="X_cursor")
+                    self.textPad.update()
+                    
                     self.textPad.highlightAll()
+                    
                     self.textPad.config(cursor='xterm')
                     self.textPad.update()
                     self.textPad.filename = filename
