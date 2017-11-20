@@ -23,6 +23,8 @@ You need "pygments" for syntax highlighting
 
 only tkinter is used with python 3.x 
  
+ 
+ # to do
  - > tabs are ordered in a stack -> you can close only the last opened tab
  
  
