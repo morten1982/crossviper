@@ -397,6 +397,71 @@ class TextPad(tk.Text):
                     self.delete("insert-4c", "insert")
                     return 'break'
     
+    def highlightOpen(self, text):
+        index = self.index(tk.INSERT).split(".")
+        line_no = int(index[0])
+        
+        lines = text.split('\n')
+        i = 1
+        
+        for line in lines:
+            self.insert('%d.0' % i, line)
+
+            self.mark_set("range_start", '%d.0' %i)
+
+            
+            for token, content in lex(line, PythonLexer()):
+                # Debug
+                #print(token)
+
+                self.tag_configure("Token.Name", foreground="#FFFFFF")
+                self.tag_configure("Token.Text", foreground="#FFFFFF")
+
+                self.tag_configure("Token.Keyword", foreground="#CC7A00")
+                self.tag_configure("Token.Keyword.Constant", foreground="#CC7A00")
+                self.tag_configure("Token.Keyword.Declaration", foreground="#CC7A00")
+                self.tag_configure("Token.Keyword.Namespace", foreground="#CC7A00")
+                self.tag_configure("Token.Keyword.Pseudo", foreground="#CC7A00")
+                self.tag_configure("Token.Keyword.Reserved", foreground="#CC7A00")
+                self.tag_configure("Token.Keyword.Type", foreground="#CC7A00")
+
+                self.tag_configure("Token.Punctuation", foreground="#2d991d")
+
+                self.tag_configure("Token.Name.Class", foreground="#ddd313")
+                self.tag_configure("Token.Name.Exception", foreground="#ddd313")
+                self.tag_configure("Token.Name.Function", foreground="#298fb5")
+                self.tag_configure("Token.Name.Function.Magic", foreground="#298fb5")
+                self.tag_configure("Token.Name.Decorator", foreground="#298fb5")
+
+                        
+                self.tag_configure("Token.Name.Builtin", foreground="#CC7A00")
+                self.tag_configure("Token.Name.Builtin.Pseudo", foreground="#CC7A00")
+                        
+
+                self.tag_configure("Token.Operator.Word", foreground="#CC7A00")
+                self.tag_configure("Token.Operator", foreground="#FF0000")
+
+                self.tag_configure("Token.Comment", foreground="#767d87")
+                self.tag_configure("Token.Comment.Single", foreground="#767d87")
+                self.tag_configure("Token.Comment.Double", foreground="#767d87")
+
+                self.tag_configure("Token.Literal.Number.Integer", foreground="#88daea")
+                self.tag_configure("Token.Literal.Number.Float", foreground="#88daea")
+            # 
+                self.tag_configure("Token.Literal.String.Single", foreground="#35c666")
+                self.tag_configure("Token.Literal.String.Double", foreground="#35c666")
+
+            
+
+                self.mark_set("range_end", "range_start + %dc" % len(content))
+                self.tag_add(str(token), "range_start", "range_end")
+                self.mark_set("range_start", "range_end")
+                
+            self.insert(tk.INSERT, '\n')
+            i += 1
+            self.update()
+
+    
     def highlight(self, event=None, lineNumber=None):
         '''
             highlight the line where the cursor is ...
@@ -471,9 +536,9 @@ class TextPad(tk.Text):
         for line in code.splitlines():
             self.index("%d.0" %i)
             self.highlight(lineNumber=i)
+            self.update()
             i += 1
-        self.index("1.0")
-        self.update()
+
     
     def highlightAllOpen(self, code):
         pass

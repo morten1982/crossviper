@@ -1076,8 +1076,6 @@ class RightPanel(tk.Frame):
                 makeNew = False
             try:
                 with open(filename, 'r') as f:
-                    #code = f.read().splitlines()
-                    #print(code)
                     text = f.read()
                     if makeNew:
                         self.new()
@@ -1086,18 +1084,15 @@ class RightPanel(tk.Frame):
                     self.notebook.select(l)
                     self.update()
                     self.tabChanged()
-                    self.textPad.delete('1.0', tk.END)
                     
+                    self.textPad.delete('1.0', tk.END)
                     self.textPad.insert("1.0", text)
                     
                     self.master.master.master.title('Loading ...')
                     self.textPad.config(cursor="X_cursor")
                     self.textPad.update()
-                    #t1 = threading.Thread(target=self.textPad.highlightAll)
-                    #t1.start()
-                    #t1.join()
-                    self.textPad.highlightAll()
                     
+                    self.textPad.highlightAll()
                     self.textPad.config(cursor='xterm')
                     self.textPad.update()
                     self.textPad.filename = filename
@@ -1105,16 +1100,16 @@ class RightPanel(tk.Frame):
                     self.notebook.tab(l, text=file)
                     self.master.master.master.title(self.textPad.filename)
                     self.textPad.updateAutoCompleteList()
+                    
                     self.tabChanged()
-                    self.textPad.mark_set("insert", "1.0")
-
+                    #self.textPad.mark_set("insert", "1.0")
                     
             except Exception as e:
                 #print(str(e))
                 tk.messagebox.showinfo("Error", str(e))
         #    return
     
-    
+
     def save(self, event=None):
         if len(self.TEXTPADS) -1 == -1:
             return
@@ -1457,14 +1452,11 @@ if __name__ == '__main__':
     app = CrossViper(master=None)
     app.master.title('Cross-Viper 0.1')
     app.master.minsize(width=1000, height=800)
-    pathList = __file__.replace('\\', '/')
-    pathList = __file__.split('/')[:-1]
-    dir = ''
-    for item in pathList:
-        dir += item + '/'
+
     dir = str(os.path.dirname(os.path.abspath(__file__))) + '/'
     dir += 'images/crossviper.ico'
     img = tk.PhotoImage(dir)
     root.tk.call('wm', 'iconphoto', root._w, img)
+    
     center(root)
     app.mainloop()
