@@ -39,7 +39,7 @@ class TextLineNumbers(tk.Canvas):
             if dline is None: break
             y = dline[1]
             linenum = str(i).split(".")[0]
-            self.create_text(2,y,anchor="nw", font=self.font, text=linenum)
+            self.create_text(2,y,anchor="nw", font=self.font, text=linenum, fill='white')
             i = self.textwidget.index("%s+1line" % i)
         
         
@@ -85,7 +85,7 @@ class TextPad(tk.Text):
         self.fontSize = 13
         self.configFont()
 
-        self.config(insertbackground='#35bf0f')
+        self.config(insertbackground='#00FF00')
         self.config(background='#000000')
         self.config(foreground='#FFFFFF')
         

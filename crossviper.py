@@ -52,7 +52,7 @@ class ToolTip():
         tw.wm_geometry('+%d+%d' % (x, y))
         
         label = tk.Label(tw, text=self.text, justify=tk.LEFT,
-                         background='#ffffe0', relief=tk.SOLID, borderwidth=1)
+                         background='#000000', foreground='yellow', relief=tk.SOLID, borderwidth=1)
         label.pack(ipadx=1)
      
     def hidetip(self):
@@ -64,7 +64,8 @@ class ToolTip():
         
 ###################################################################
 
-class LeftPanel(tk.Frame):
+
+class LeftPanel(ttk.Frame):
     '''
         LeftPanel ... containing treeView, leftButtonFrame, Buttons 
     '''
@@ -73,6 +74,7 @@ class LeftPanel(tk.Frame):
         self.master = master
         self.rightPanel = rightPanel
         self.pack()
+        
         
         self.initUI()
         
@@ -88,7 +90,7 @@ class LeftPanel(tk.Frame):
        	    self.dir += item + '/'
         
         print('directory: ' + self.dir)
-        leftButtonFrame = tk.Frame(self, height=25, bg='gray')
+        leftButtonFrame = ttk.Frame(self, height=25)
         leftButtonFrame.pack(side=tk.TOP, fill=tk.X)
 
         # TreeView
@@ -96,8 +98,15 @@ class LeftPanel(tk.Frame):
         path = expanduser("~")
         os.chdir(path)
         #path = '.'
+
         self.tree = ttk.Treeview(self)
 
+        self.tree.tag_configure('row', background='black', foreground='white')
+        self.tree.tag_configure('folder', background='black', foreground='crimson')
+        self.tree.tag_configure('subfolder', background='black', foreground='#448dc4')
+        self.tree.tag_configure('hidden', background='black', foreground='gray')
+        
+        
         #self.tree.heading('#0', text='<-', anchor='w')
         #self.tree.heading('#0', text='Name')
         self.tree['show'] = 'tree'
@@ -105,10 +114,10 @@ class LeftPanel(tk.Frame):
         self.tree.bind("<Button-1>", self.OnClickTreeview)
         self.tree.bind('<<TreeviewSelect>>', self.on_select)
         self.tree.bind("<ButtonRelease-3>", self.treePopUp)
-
-
+        
+        
         abspath = os.path.abspath(path)
-        root_node = self.tree.insert('', 'end', text=abspath, open=True)
+        root_node = self.tree.insert('', 'end', text=abspath, open=True, tags='folder')
         self.process_directory(root_node, abspath)
 
         self.tree.pack(side=tk.LEFT, expand=True, fill=tk.BOTH)
@@ -180,7 +189,12 @@ class LeftPanel(tk.Frame):
             #l.reverse()
             
             for items in l:
-                self.tree.insert(parent, 'end', text=str(items), open=False)
+                if items.startswith('>'):
+                    self.tree.insert(parent, 'end', text=str(items), open=False, tags='subfolder')
+                elif items.startswith('.'):
+                    self.tree.insert(parent, 'end', text=str(items), open=False, tags='hidden')                    
+                else:
+                    self.tree.insert(parent, 'end', text=str(items), open=False, tags='row')
        
         except Exception as e:
             tk.messagebox.showerror('Error', str(e))
@@ -217,7 +231,7 @@ class LeftPanel(tk.Frame):
                     self.tree.delete(i)
                 path = '.'
                 abspath = os.path.abspath(path)
-                root_node = self.tree.insert('', 'end', text=abspath, open=True)
+                root_node = self.tree.insert('', 'end', text=abspath, open=True, tags='row')
                 self.process_directory(root_node, abspath)
                 
             except Exception as e:
@@ -313,7 +327,7 @@ class LeftPanel(tk.Frame):
             self.tree.delete(i)
         path = '.'
         abspath = os.path.abspath(path)
-        root_node = self.tree.insert('', 'end', text=abspath, open=True)
+        root_node = self.tree.insert('', 'end', text=abspath, open=True, tags='folder')
         self.process_directory(root_node, abspath)
 
     def newFolder(self):
@@ -546,7 +560,7 @@ class LeftPanel(tk.Frame):
                 self.tree.delete(i)
             path = '.'
             abspath = os.path.abspath(path)
-            root_node = self.tree.insert('', 'end', text=abspath, open=True)
+            root_node = self.tree.insert('', 'end', text=abspath, open=True, tags='folder')
             self.process_directory(root_node, abspath)
                 
         except Exception as e:
@@ -590,7 +604,9 @@ class RightPanel(tk.Frame):
         super().__init__(master)
         self.master = master
         self.pack()
+
         self.initUI()
+
     
     def initUI(self):
         pathList = __file__.replace('\\', '/')
@@ -603,10 +619,11 @@ class RightPanel(tk.Frame):
             self.dir += item + '/'
         #print(self.dir)
         
-        rightButtonFrame = tk.Frame(self, height=25, bg='gray')
+
+        rightButtonFrame = ttk.Frame(self, height=25)
         rightButtonFrame.pack(side=tk.TOP, fill=tk.X)
         
-        self.rightBottomFrame = tk.Frame(self, height=25)
+        self.rightBottomFrame = ttk.Frame(self, height=25)
         self.rightBottomFrame.pack(side=tk.BOTTOM, fill=tk.X)
         
         # notebook
@@ -638,7 +655,7 @@ class RightPanel(tk.Frame):
         self.textPad.bind("<<Change>>", self.on_change)
         self.textPad.bind("<Configure>", self.on_change)
         
-        self.linenumber = TextLineNumbers(self.frame1, width=35)
+        self.linenumber = TextLineNumbers(self.frame1, width=35, bg='black')
         self.linenumber.attach(self.textPad)
         self.linenumber.pack(side="left", fill="y")
         
@@ -749,20 +766,23 @@ class RightPanel(tk.Frame):
         searchButton.pack(side=tk.RIGHT)
         self.createToolTip(searchButton, 'Search')
 
-        self.searchBox = tk.Entry(self.rightBottomFrame)
+        self.searchBox = tk.Entry(self.rightBottomFrame, bg='black', fg='white')
+        self.searchBox.configure(cursor="xterm green")
+        self.searchBox.configure(insertbackground = "green")
         self.searchBox.bind('<Key>', self.OnSearchBoxChange)
         self.searchBox.bind('<Return>', self.search)
         self.searchBox.pack(side=tk.RIGHT, padx=5)
         # self.searching = False
 
         # autocompleteEntry
-        self.autocompleteEntry = tk.Label(self.rightBottomFrame, fg='green', text='---', font=('Mono', 13))
+        self.autocompleteEntry = ttk.Label(self.rightBottomFrame, text='---', font=('Mono', 13))
         self.autocompleteEntry.pack(side='left', fill='y', padx=5)
         self.textPad.entry = self.autocompleteEntry
 
 
         # Shortcuts
         self.textPad = self.shortcutBinding(self.textPad)
+    
 
     def popupRun(self, event):
         self.runMenu.post(event.x_root, event.y_root)
@@ -1036,7 +1056,7 @@ class RightPanel(tk.Frame):
         textScrollY.config(command=textPad.yview)
         textScrollY.pack(side=tk.RIGHT, fill=tk.Y)
         
-        linenumber = TextLineNumbers(frame, width=35)
+        linenumber = TextLineNumbers(frame, width=35, bg='black')
         linenumber.attach(textPad)
         linenumber.pack(side="left", fill="y")
         
@@ -1406,7 +1426,7 @@ class RightPanel(tk.Frame):
         
         self.password = self.passwordTmp
 
-class CrossViper(tk.Frame):
+class CrossViper(ttk.Frame):
 
     def __init__(self, master):
         super().__init__(master, width=1000, height=800)
@@ -1414,8 +1434,35 @@ class CrossViper(tk.Frame):
         self.initUI()
         self.style = ttk.Style()
         self.style.theme_use('clam')
-        #self.style.configure("Treeview", background="black", 
-        #        fieldbackground="black", foreground="white")
+        self.style.configure("Treeview", background="black", 
+                fieldbackground="black", foreground="white")
+        self.style.configure('TNotebook', background='black',
+                fieldbackground='black', foreground='white')
+        self.style.configure('TButton', background='black',
+                fieldbackground='black', foreground='white')
+        self.style.configure('TFrame', background='black',
+                fieldbackground='black', foreground='white')
+        self.style.configure('TLabel', background='black',
+                fieldbackground='black', foreground='green')
+        self.style.configure('TPanedwindow', background='black',
+                fieldbackground='black', foreground='white')
+        self.style.configure('Vertical.TScrollbar', background='green',
+                fieldbackground='black', foreground='black')
+        
+        self.style.configure('Red', background='red')
+        self.style.map('TButton',
+            foreground=[('disabled', 'yellow'),
+                    ('pressed', 'red'),
+                    ('active', 'blue')],
+            background=[('disabled', 'magenta'),
+                    ('pressed', '!focus', 'cyan'),
+                    ('active', 'green')],
+            highlightcolor=[('focus', 'green'),
+                        ('!focus', 'white')],
+            relief=[('pressed', 'groove'),
+                ('!pressed', 'ridge')])
+
+
         
     def initUI(self):
         self.panedWindow = ttk.PanedWindow(self, orient=tk.HORIZONTAL)
@@ -1452,6 +1499,10 @@ if __name__ == '__main__':
     app = CrossViper(master=None)
     app.master.title('Cross-Viper 0.1')
     app.master.minsize(width=1000, height=800)
+    
+    root['bg'] = 'black'
+    root.configure(cursor = "left_ptr green")
+
 
     dir = str(os.path.dirname(os.path.abspath(__file__))) + '/'
     dir += 'images/crossviper.ico'
