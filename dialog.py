@@ -21,7 +21,7 @@ class Dialog(tk.Toplevel):
 
         self.result = None
 
-        body = tk.Frame(self)
+        body = ttk.Frame(self)
         self.initial_focus = self.body(body)
         body.pack(padx=5, pady=5)
 
@@ -56,9 +56,9 @@ class Dialog(tk.Toplevel):
 
         box = tk.Frame(self)
 
-        w = tk.Button(box, text="OK", width=10, command=self.ok, default=tk.ACTIVE)
+        w = ttk.Button(box, text="OK", width=10, command=self.ok, default=tk.ACTIVE)
         w.pack(side=tk.LEFT, padx=5, pady=5)
-        w = tk.Button(box, text="Cancel", width=10, command=self.cancel)
+        w = ttk.Button(box, text="Cancel", width=10, command=self.cancel)
         w.pack(side=tk.LEFT, padx=5, pady=5)
 
         #self.bind("<Return>", self.ok)
@@ -109,9 +109,9 @@ class SettingsDialog(Dialog):
         self.master.grid_columnconfigure(1, weight=1)
 
         # make body
-        tk.Label(master, text="Run:").grid(row=0)
-        tk.Label(master, text="Terminal:").grid(row=1)
-        tk.Label(master, text="Interpreter:").grid(row=2)
+        ttk.Label(master, text="Run:").grid(row=0)
+        ttk.Label(master, text="Terminal:").grid(row=1)
+        ttk.Label(master, text="Interpreter:").grid(row=2)
         
         self.v = tk.IntVar()
         if self.c.getSystem() == 'mate':
@@ -128,20 +128,28 @@ class SettingsDialog(Dialog):
             self.v.set(6)
 
         
-        self.e1 = tk.Entry(master)
-        self.e2 = tk.Entry(master)
-        self.e3 = tk.Entry(master)
-        self.mate_radio = tk.Radiobutton(master, text='Mate', variable=self.v,
+        self.e1 = tk.Entry(master, bg='black', fg='white')
+        self.e1.configure(cursor='xterm green')
+        self.e1.configure(insertbackground = "green")
+        self.e2 = tk.Entry(master, bg='black', fg='white')
+        self.e2.configure(cursor='xterm green')
+        self.e2.configure(insertbackground = "green")
+        self.e3 = tk.Entry(master, bg='black', fg='white')
+        self.e3.configure(cursor='xterm green')
+        self.e3.configure(insertbackground = "green")
+
+
+        self.mate_radio = ttk.Radiobutton(master, text='Mate', variable=self.v,
                                         command=self.setMate, value=1)
-        self.gnome_radio = tk.Radiobutton(master, text='Gnome', variable=self.v,
+        self.gnome_radio = ttk.Radiobutton(master, text='Gnome', variable=self.v,
                                         command=self.setGnome, value=2)
-        self.kde_radio = tk.Radiobutton(master, text='KDE', variable=self.v,
+        self.kde_radio = ttk.Radiobutton(master, text='KDE', variable=self.v,
                                         command=self.setKDE, value=3)
-        self.xterm_radio = tk.Radiobutton(master, text='xterm', variable=self.v,
+        self.xterm_radio = ttk.Radiobutton(master, text='xterm', variable=self.v,
                                         command=self.setXterm, value=4)
-        self.win_radio = tk.Radiobutton(master, text='Windows', variable=self.v,
+        self.win_radio = ttk.Radiobutton(master, text='Windows', variable=self.v,
                                         command=self.setWindows, value=5)
-        self.mac_radio = tk.Radiobutton(master, text='MacOS', variable=self.v,
+        self.mac_radio = ttk.Radiobutton(master, text='MacOS', variable=self.v,
                                         command=self.setMac, value=6)
 
 
@@ -190,7 +198,10 @@ class SettingsDialog(Dialog):
         config['Interpreter']['mac'] = 'open -a Terminal ./python3'
         
         config['System'] = {}
-        config['System']['system'] = 'None'
+        config['System']['system'] = ''
+        
+        config['Password'] = {}
+        config['Password']['password'] = ''
         
         return config
 
@@ -236,6 +247,7 @@ class SettingsDialog(Dialog):
             config['Run']['mate'] = self.e1.get()
             config['Terminal']['mate'] = self.e2.get()
             config['Interpreter']['mate'] = self.e3.get()
+    
         elif value == 2:
             config['System']['system'] = 'gnome'
             config['Run']['gnome'] = self.e1.get()
@@ -247,21 +259,25 @@ class SettingsDialog(Dialog):
             config['Run']['kde'] = self.e1.get()
             config['Terminal']['kde'] = self.e2.get()
             config['Interpreter']['kde'] = self.e3.get()
+
         elif value == 4:
             config['System']['system'] = 'xterm'
             config['Run']['xterm'] = self.e1.get()
             config['Terminal']['xterm'] = self.e2.get()
             config['Interpreter']['xterm'] = self.e3.get()
+
         elif value == 5:
             config['System']['system'] = 'windows'
             config['Run']['windows'] = self.e1.get()
             config['Terminal']['windows'] = self.e2.get()
             config['Interpreter']['windows'] = self.e3.get()
+
         elif value == 6:
             config['System']['system'] = 'mac'
             config['Run']['mac'] = self.e1.get()
             config['Terminal']['mac'] = self.e2.get()
             config['Interpreter']['mac'] = self.e3.get()
+
         else:
             return
         
@@ -272,6 +288,7 @@ class SettingsDialog(Dialog):
 
         base = os.path.dirname(thisFile)
         base = self.CheckPath(base)
+        print(base)
         iniPath = base + "/crossviper.ini"
         with open(iniPath, 'w') as f:
             config.write(f)
@@ -298,7 +315,7 @@ class ViewDialog(tk.Toplevel):
 
         self.result = None
 
-        body = tk.Frame(self)
+        body = ttk.Frame(self)
         self.initial_focus = self.body(body)
         body.pack(padx=5, pady=5)
 
@@ -332,7 +349,7 @@ class ViewDialog(tk.Toplevel):
     def buttonbox(self):
         box = tk.Frame(self)
         
-        w = tk.Button(box, text="OK", width=10, command=self.cancel, default=tk.ACTIVE)
+        w = ttk.Button(box, text="OK", width=10, command=self.cancel, default=tk.ACTIVE)
         w.pack(side=tk.LEFT, padx=5, pady=5)
         box.pack()
 
@@ -529,7 +546,7 @@ class InfoDialog(tk.Toplevel):
         
         self.result = None
 
-        body = tk.Frame(self)
+        body = ttk.Frame(self)
         self.initial_focus = self.body(body)
         body.pack(padx=5, pady=5)
 
@@ -553,17 +570,17 @@ class InfoDialog(tk.Toplevel):
 
     def body(self, master):
         self.master = master
-        label1 = tk.Label(self, text=self.text)
+        label1 = ttk.Label(self, text=self.text)
         label1.pack()
     
         if self.directory:
-            label2 = tk.Label(master, text='type: directory')
+            label2 = ttk.Label(master, text='type: directory')
             label2.pack()
         else:
-            label2 = tk.Label(master, text='type: file')
+            label2 = ttk.Label(master, text='type: file')
             label2.pack()
         if self.file:
-            label3 = tk.Label(master, text='size: ' + str(self.size) + " bytes")
+            label3 = ttk.Label(master, text='size: ' + str(self.size) + " bytes")
             label3.pack()
         
     def buttonbox(self):
@@ -619,7 +636,7 @@ class HelpDialog(tk.Toplevel):
 
         self.parent = parent
 
-        body = tk.Frame(self)
+        body = ttk.Frame(self)
         self.initial_focus = self.body(body)
         body.pack(padx=5, pady=5)
 
@@ -684,9 +701,9 @@ class HelpDialog(tk.Toplevel):
         readonlyHelp.configure(state='disabled')
 
     def buttonbox(self):
-        box = tk.Frame(self)
+        box = ttk.Frame(self)
         
-        w = tk.Button(box, text="OK", width=10, command=self.cancel, default=tk.ACTIVE)
+        w = ttk.Button(box, text="OK", width=10, command=self.cancel, default=tk.ACTIVE)
         w.pack(side=tk.BOTTOM, padx=5, pady=5)
         box.pack()
         buttonbox = tk.Frame(self)
@@ -742,13 +759,13 @@ class GotoDialog(tk.Toplevel):
         self.master = master
 
         # make body
-        tk.Label(master, text="Goto Linenumber:").grid(row=0)
+        ttk.Label(master, text="Goto Linenumber:").grid(row=0)
         
         #self.e1 = tk.Entry(master)
         
         index = int(self.Pad.index("end-1c linestart").split('.')[0])
         
-        self.spinbox = tk.Spinbox(master, from_=1, to=index)
+        self.spinbox = ttk.Spinbox(master, from_=1, to=index)
         self.spinbox.grid(row=0, column=1, sticky='nsew')
 
         return self.spinbox # initial focus
@@ -759,9 +776,9 @@ class GotoDialog(tk.Toplevel):
 
         box = tk.Frame(self)
 
-        w = tk.Button(box, text="OK", width=10, command=self.apply, default=tk.ACTIVE)
+        w = ttk.Button(box, text="OK", width=10, command=self.apply, default=tk.ACTIVE)
         w.pack(side=tk.LEFT, padx=5, pady=5)
-        w = tk.Button(box, text="Cancel", width=10, command=self.cancel)
+        w = ttk.Button(box, text="Cancel", width=10, command=self.cancel)
         w.pack(side=tk.LEFT, padx=5, pady=5)
 
 

@@ -44,7 +44,7 @@ class ToolTip():
         self.text = text
         if self.tipWindow or not self.text:
             return
-        x, y, _cx, cy = self.widget.bbox('insert')
+        x, y, cx, cy = self.widget.bbox('insert')
         x = x + self.widget.winfo_rootx() + 0
         y = y + cy + self.widget.winfo_rooty() + 40
         self.tipWindow = tw = tk.Toplevel(self.widget)
@@ -102,7 +102,7 @@ class LeftPanel(ttk.Frame):
         self.tree = ttk.Treeview(self)
 
         self.tree.tag_configure('row', background='black', foreground='white')
-        self.tree.tag_configure('folder', background='black', foreground='crimson')
+        self.tree.tag_configure('folder', background='black', foreground='yellow')
         self.tree.tag_configure('subfolder', background='black', foreground='#448dc4')
         self.tree.tag_configure('hidden', background='black', foreground='gray')
         
@@ -231,7 +231,7 @@ class LeftPanel(ttk.Frame):
                     self.tree.delete(i)
                 path = '.'
                 abspath = os.path.abspath(path)
-                root_node = self.tree.insert('', 'end', text=abspath, open=True, tags='row')
+                root_node = self.tree.insert('', 'end', text=abspath, open=True, tags='folder')
                 self.process_directory(root_node, abspath)
                 
             except Exception as e:
@@ -254,10 +254,9 @@ class LeftPanel(ttk.Frame):
     
         elif '/' in self.tree.item(item, "text") or '\\' in self.tree.item(item, "text"):
             os.chdir('..')
-            self.refreshTree()
             dir = self.checkPath(os.getcwd())
             self.master.master.master.title(dir)
-
+            self.refreshTree()
             return 'break'
 
         else:
@@ -277,7 +276,11 @@ class LeftPanel(ttk.Frame):
             
             # workaround 
             # step 2
+            self.refreshTree()
+            self.tree.update()
             self.tree.after(1000, self.bindit)
+        
+        self.refreshTree()
     
     def bindit(self):
         # workaround 
@@ -642,8 +645,10 @@ class RightPanel(tk.Frame):
         self.textPad.filename = None
         self.textPad.bind("<FocusIn>", self.onTextPadFocus)
         self.textPad.pack(side=tk.RIGHT, expand=True, fill=tk.BOTH)
-        textScrollY = ttk.Scrollbar(self.textPad)
-        textScrollY.config(cursor="double_arrow")
+        self.textPad.configure(bg='black')
+        #textScrollY = ttk.Scrollbar(self.textPad)
+        textScrollY = tk.Scrollbar(self.textPad, bg="#424242", troughcolor="#2d2d2d", highlightcolor="green", activebackground="green", highlightbackground="gray")
+        textScrollY.config(cursor="left_ptr")
         self.textPad.configure(yscrollcommand=textScrollY.set)
         textScrollY.config(command=self.textPad.yview)
         textScrollY.pack(side=tk.RIGHT, fill=tk.Y)
@@ -993,11 +998,11 @@ class RightPanel(tk.Frame):
                 abspath = os.path.abspath(path)
                 root_node = self.master.master.leftPanel.tree.insert('', 'end', text=abspath, open=True)
                 self.master.master.leftPanel.process_directory(root_node, abspath)
-                
+                self.master.master.leftPanel.refreshTree()
 
 
         else:
-            self.master.master.master.title("Cross-Viper 0.1")
+            self.master.master.master.title("Cross-Viper 1.0")
         
         
     
@@ -1046,7 +1051,7 @@ class RightPanel(tk.Frame):
         
     def new(self, event=None):
         frame = ttk.Frame(self.notebook)
-        self.notebook.add(frame, text='noname')
+        self.notebook.add(frame, text='noname', )
 
         textPad = TextPad(frame, undo=True, maxundo=-1, autoseparators=True)
         textPad.pack(side=tk.RIGHT, expand=True, fill=tk.BOTH)
@@ -1436,32 +1441,47 @@ class CrossViper(ttk.Frame):
         self.style.theme_use('clam')
         self.style.configure("Treeview", background="black", 
                 fieldbackground="black", foreground="white")
+
+        self.style.configure('TCheckbutton', background='black',
+                fieldbackground='black', foreground='white')
+
+        self.style.configure('TRadiobutton', background='black',
+                fieldbackground='black', foreground='white')
+
+        self.style.configure('TSpinbox', background='black',
+                fieldbackground='black', foreground='white')
+
         self.style.configure('TNotebook', background='black',
                 fieldbackground='black', foreground='white')
-        self.style.configure('TButton', background='black',
+        self.style.configure('TNotebook.Tab', background='black',
                 fieldbackground='black', foreground='white')
+        self.style.map('TNotebook.Tab',
+            foreground=[('selected', 'yellow')],
+            background=[('selected', 'black')])
+            
         self.style.configure('TFrame', background='black',
                 fieldbackground='black', foreground='white')
         self.style.configure('TLabel', background='black',
                 fieldbackground='black', foreground='green')
         self.style.configure('TPanedwindow', background='black',
                 fieldbackground='black', foreground='white')
-        self.style.configure('Vertical.TScrollbar', background='green',
-                fieldbackground='black', foreground='black')
-        
+
+        self.style.configure('TEntry', background='black',
+                fieldbackground='black', foreground='white')
+
+        self.style.configure('TButton', background='black',
+                fieldbackground='black', foreground='white')
         self.style.configure('Red', background='red')
         self.style.map('TButton',
-            foreground=[('disabled', 'yellow'),
-                    ('pressed', 'red'),
-                    ('active', 'blue')],
-            background=[('disabled', 'magenta'),
-                    ('pressed', '!focus', 'cyan'),
-                    ('active', 'green')],
+            foreground=[('pressed', 'white'),
+                        ('focus', 'white'),
+                        ('active', 'white')],
+            background=[('pressed', '!focus', 'green'),
+                        ('active', 'green')],
             highlightcolor=[('focus', 'green'),
                         ('!focus', 'white')],
-            relief=[('pressed', 'groove'),
-                ('!pressed', 'ridge')])
-
+            activerelief=[('pressed', 'groove'),
+                    ('!pressed', 'ridge')])
 
         
     def initUI(self):
@@ -1501,7 +1521,7 @@ if __name__ == '__main__':
     app.master.minsize(width=1000, height=800)
     
     root['bg'] = 'black'
-    root.configure(cursor = "left_ptr green")
+    #root.configure(cursor = "left_ptr green")
 
 
     dir = str(os.path.dirname(os.path.abspath(__file__))) + '/'
