@@ -18,7 +18,8 @@ from codeeditor import TextLineNumbers, TextPad
 from configuration import Configuration
 from dialog import (SettingsDialog, ViewDialog, 
                     InfoDialog, NewDirectoryDialog, HelpDialog,
-                    GotoDialog)
+                    GotoDialog, MessageYesNoDialog, MessageDialog,
+                    MessageSudoYesNoDialog)
 
 ###################################################################
 class RunThread(threading.Thread):
@@ -197,7 +198,7 @@ class LeftPanel(ttk.Frame):
                     self.tree.insert(parent, 'end', text=str(items), open=False, tags='row')
        
         except Exception as e:
-            tk.messagebox.showerror('Error', str(e))
+            MessageDialog(self, 'Error', '\n' + str(e) + '\n')
             return
         
     def OnClickTreeview(self, event):
@@ -235,7 +236,8 @@ class LeftPanel(ttk.Frame):
                 self.process_directory(root_node, abspath)
                 
             except Exception as e:
-                tk.messagebox.showerror('Error', str(e))
+                MessageDialog(self, 'Error', '\n' + str(e) + '\n')
+
                 return
         
         elif self.tree.item(item, "text").startswith('>'):
@@ -246,7 +248,7 @@ class LeftPanel(ttk.Frame):
             try:
                 os.chdir(dir)
             except Exception as e:
-                tk.messagebox.showerror('Error', str(e))
+                MessageDialog(self, 'Error', '\n' + str(e) + '\n')
 
             self.selected = None
             self.refreshTree()
@@ -376,7 +378,7 @@ class LeftPanel(ttk.Frame):
         
             except Exception as e:
                 #print('this')
-                tk.messagebox.showerror('Error', str(e))
+                MessageDialog(self, 'Error', '\n' + str(e) + '\n')
                 return
         
             currentDirectory = self.checkPath(os.getcwd())
@@ -403,7 +405,7 @@ class LeftPanel(ttk.Frame):
                     self.refreshTree()
 
                 except Exception as e:
-                    tk.messagebox.showerror('Error', str(e))
+                    MessageDialog(self, 'Error', '\n' + str(e) + '\n')
                     return
             
             elif os.path.isfile(self.destinationItem):  # Destination == file
@@ -414,7 +416,7 @@ class LeftPanel(ttk.Frame):
                     self.refreshTree()
 
                 except Exception as e:
-                    tk.messagebox.showerror('Error', str(e))
+                    MessageDialog(self, 'Error', '\n' + str(e) + '\n')
                     return
 
         elif os.path.isdir(self.sourceItem):            # Source == directory
@@ -430,7 +432,7 @@ class LeftPanel(ttk.Frame):
                     self.refreshTree()
                 
                 except Exception as e:
-                    tk.messagebox.showerror('Error', str(e))
+                    MessageDialog(self, 'Error', '\n' + str(e) + '\n')
                     return
             
             elif os.path.isfile(self.destinationItem):   # Destination == file
@@ -445,7 +447,7 @@ class LeftPanel(ttk.Frame):
                     self.refreshTree()
                     
                 except Exception as e:
-                    tk.messagebox.showerror('Error', str(e))
+                    MessageDialog(self, 'Error', '\n' + str(e) + '\n')
                     return
         
         self.selected = None
@@ -485,16 +487,18 @@ class LeftPanel(ttk.Frame):
         
         filename = self.checkPath(filename)
         
-        result = tk.messagebox.askquestion('Delete', 'Delete\n\n' + filename + '  ?')
+        dialog = MessageYesNoDialog(self, 'Delete', '\n\tDelete\n\n' + filename + '  ?\n\n')
+        result = dialog.result
         
-        if result == 'yes':
+        if result == 1:
             if directory:
                 try:
                     shutil.rmtree(filename)
                     self.refreshTree()
                     
                 except Exception as e:
-                    tk.messagebox.showerror('Error', str(e))
+                    MessageDialog(self, 'Error', '\n' + str(e) + '\n')
+
                     
             elif file:
                 try:
@@ -502,14 +506,16 @@ class LeftPanel(ttk.Frame):
                     self.refreshTree()
                 
                 except Exception as e:
-                    tk.messagebox('Error', str(e))
+                    MessageDialog(self, 'Error', '\n' + str(e) + '\n')
 
+        
     
     def treePopUp(self, event):
         item = self.tree.identify('item',event.x,event.y)
         self.tree.selection_set(item)
             
-        menu = tk.Menu(self, tearoff=False)
+        menu = tk.Menu(self, tearoff=False, background='#000000',foreground='white',
+                activebackground='green', activeforeground='white')
         menu.add_command(label='Info', compound=tk.LEFT, command=self.treeGenerateInfo)
         menu.add_separator()
         menu.add_command(label="Create New Folder", compound=tk.LEFT, command=self.treeGenerateFolder)
@@ -645,7 +651,7 @@ class RightPanel(tk.Frame):
         self.textPad.filename = None
         self.textPad.bind("<FocusIn>", self.onTextPadFocus)
         self.textPad.pack(side=tk.RIGHT, expand=True, fill=tk.BOTH)
-        self.textPad.configure(bg='black')
+
         #textScrollY = ttk.Scrollbar(self.textPad)
         textScrollY = tk.Scrollbar(self.textPad, bg="#424242", troughcolor="#2d2d2d", highlightcolor="green", activebackground="green", highlightbackground="gray")
         textScrollY.config(cursor="left_ptr")
@@ -741,7 +747,8 @@ class RightPanel(tk.Frame):
         runButton.pack(side=tk.RIGHT)
         self.createToolTip(runButton, 'Run File')
         
-        self.runMenu = tk.Menu(self, tearoff=0)
+        self.runMenu = tk.Menu(self, tearoff=0, background='#000000',foreground='white',
+                activebackground='green', activeforeground='white')
         self.runMenu.add_command(label="Run", command=self.run)
         self.runMenu.add_command(label="Run with sudo", command=self.runSudo)
         runButton.bind('<Button-3>', self.popupRun)
@@ -773,7 +780,9 @@ class RightPanel(tk.Frame):
 
         self.searchBox = tk.Entry(self.rightBottomFrame, bg='black', fg='white')
         self.searchBox.configure(cursor="xterm green")
-        self.searchBox.configure(insertbackground = "green")
+        self.searchBox.configure(insertbackground = "red")
+        self.searchBox.configure(highlightcolor='#448dc4')
+
         self.searchBox.bind('<Key>', self.OnSearchBoxChange)
         self.searchBox.bind('<Return>', self.search)
         self.searchBox.pack(side=tk.RIGHT, padx=5)
@@ -832,6 +841,7 @@ class RightPanel(tk.Frame):
         textPad.bind('<F12>', self.settings)
         textPad.bind('<Alt-Up>', self.zoomIn)
         textPad.bind('<Alt-Down>', self.zoomOut)
+        textPad.bind('<Alt-Right>', self.nextTab)
         textPad.bind('<Alt-F4>', self.quit)
         textPad.bind('<<Modified>>', self.onTextPadModified)
 
@@ -895,13 +905,15 @@ class RightPanel(tk.Frame):
         self.tabChanged()
     
     def linenumberPopUp(self, event):
-        menu = tk.Menu(self.notebook, tearoff=False)
+        menu = tk.Menu(self.notebook, tearoff=False, background='#000000',foreground='white',
+                activebackground='green', activeforeground='white')
         menu.add_command(label='Goto', compound=tk.LEFT, command=self.textPadGenerateGoto)
         menu.tk_popup(event.x_root, event.y_root, 0)
 
     
     def textPadPopUp(self, event):
-        menu = tk.Menu(self.notebook, tearoff=False)
+        menu = tk.Menu(self.notebook, tearoff=False, background='#000000',foreground='white',
+                activebackground='green', activeforeground='white')
         menu.add_command(label='Cut', compound=tk.LEFT, command=self.textPadGenerateCut)
         menu.add_command(label="Copy", compound=tk.LEFT, command=self.textPadGenerateCopy)
         menu.add_command(label="Paste", compound=tk.LEFT, command=self.textPadGeneratePaste)
@@ -1016,7 +1028,8 @@ class RightPanel(tk.Frame):
         self.tabChanged()
         self.master.master.master.title(self.textPad.filename)
         
-        menu = tk.Menu(self.notebook, tearoff=False)
+        menu = tk.Menu(self.notebook, tearoff=False, background='#000000',foreground='white',
+                activebackground='green', activeforeground='white')
         menu.add_command(label='Close', compound=tk.LEFT, command=self.closeTab)
         menu.tk_popup(event.x_root, event.y_root, 0)
         
@@ -1024,8 +1037,10 @@ class RightPanel(tk.Frame):
         filename = self.textPad.filename
         if filename:
             if filename.endswith('*'):
-                result = tk.messagebox.askquestion('File not saved', 'Save now ?', icon='warning')
-                if result == 'yes':
+                dialog = MessageYesNoDialog(self, 'File not saved', '\nSave now ?\n\n')
+                result = dialog.result
+
+                if result == 1:
                     self.save()
                     
                 else:
@@ -1131,7 +1146,7 @@ class RightPanel(tk.Frame):
                     
             except Exception as e:
                 #print(str(e))
-                tk.messagebox.showinfo("Error", str(e))
+                MessageDialog(self, 'Error', '\n' + str(e) + '\n')
         #    return
     
 
@@ -1159,7 +1174,7 @@ class RightPanel(tk.Frame):
                         self.tabChanged()
                         
                 except Exception as e:
-                    tk.messagebox.showinfo("Error", str(e))
+                    MessageDialog(self, 'Error', '\n' + str(e) + '\n')
                     return
         else:
             filename = self.textPad.filename
@@ -1191,7 +1206,7 @@ class RightPanel(tk.Frame):
                     self.notebook.tab(x, text=file)
             
             except Exception as e:
-                    tk.messagebox.showinfo("Error", str(e))
+                    MessageDialog(self, 'Error', '\n' + str(e) + '\n')
                     return
     
     def saveAs(self, event=None):
@@ -1214,7 +1229,7 @@ class RightPanel(tk.Frame):
                     self.tabChanged()
                     
             except Exception as e:
-                tk.messagebox.showinfo("Error", str(e))
+                MessageDialog(self, 'Error', '\n' + str(e) + '\n')
                 return
 
 
@@ -1251,7 +1266,7 @@ class RightPanel(tk.Frame):
             self.textPad.highlightThisLine()
         
         except Exception as e:
-            tk.messagebox.showinfo('Error', str(e))
+            MessageDialog(self, 'Error', '\n' + str(e) + '\n')
         
         
     
@@ -1269,7 +1284,7 @@ class RightPanel(tk.Frame):
             self.textPad.highlightThisLine()
         
         except Exception as e:
-            tk.messagebox.showinfo('Error', str(e))
+            MessageDialog(self, 'Error', '\n' + str(e) + '\n')
         
         
     def zoomIn(self, event=None):
@@ -1293,8 +1308,7 @@ class RightPanel(tk.Frame):
 
     
     def settings(self, event=None):
-        dialog = SettingsDialog(self.textPad)
-        
+        dialog = SettingsDialog(self)
     
     def search(self, start=None):
         self.textPad.tag_remove('sel', "1.0", tk.END)
@@ -1410,26 +1424,29 @@ class RightPanel(tk.Frame):
             return
         
         if not self.password:
-            self.password = dialog = simpledialog.askstring('Enter Root Password', 'Password: ')
-            saveThis = messagebox.askyesno('Sudo password', 'Save to configuration.ini ?')
-            if saveThis == True:
-                c = Configuration()
-                c.setPassword(self.password)
+            dialog = MessageSudoYesNoDialog(self, 'Enter password', '')
+            password = dialog.password
+            result = dialog.result
+                        
+            if result == 1:
+                password = password
+
             else:
-                self.passwordTmp = None
-        
+                password = None
+                return
+        else:
+            password = self.password
             
         self.save()
 
         file = filepath.split('/')[-1]
 
-        c = Configuration()
         system = c.getSystem()
         runCommand = c.getRun(system).format(file)
         
-        os.popen("sudo -S %s"%(runCommand), 'w').write(self.password + '\n')
-        
-        self.password = self.passwordTmp
+        os.popen("sudo -S %s"%(runCommand), 'w').write(password + '\n')
+
+            
 
 class CrossViper(ttk.Frame):
 
@@ -1437,16 +1454,43 @@ class CrossViper(ttk.Frame):
         super().__init__(master, width=1000, height=800)
         self.pack(expand=True, fill=tk.BOTH)
         self.initUI()
+        self.initStyle()
+    
+
+    def initStyle(self):
         self.style = ttk.Style()
         self.style.theme_use('clam')
         self.style.configure("Treeview", background="black", 
-                fieldbackground="black", foreground="white")
+                fieldbackground="black", foreground="white",
+                selectbackground='green')
+        self.style.configure("Treeview.Heading", background="black", foreground='white', relief='flat')
+        self.style.map('Treeview.Heading', 
+            foreground=[('pressed', 'white'),
+                        ('focus', 'white'),
+                        ('active', 'white')],
+            background=[('pressed', '!focus', 'green'),
+                        ('active', 'green')],
+            highlightcolor=[('focus', 'green'),
+                        ('!focus', 'white')],
+            activerelief=[('pressed', 'groove'),
+                    ('!pressed', 'ridge')])
 
         self.style.configure('TCheckbutton', background='black',
                 fieldbackground='black', foreground='white')
 
         self.style.configure('TRadiobutton', background='black',
                 fieldbackground='black', foreground='white')
+        self.style.map('TRadiobutton',
+            foreground=[('pressed', 'white'),
+                        ('focus', 'white'),
+                        ('active', 'white')],
+            background=[('pressed', '!focus', 'green'),
+                        ('active', 'green')],
+            highlightcolor=[('focus', 'green'),
+                        ('!focus', 'white')],
+            activerelief=[('pressed', 'groove'),
+                    ('!pressed', 'ridge')])
+
 
         self.style.configure('TSpinbox', background='black',
                 fieldbackground='black', foreground='white')
@@ -1461,13 +1505,31 @@ class CrossViper(ttk.Frame):
             
         self.style.configure('TFrame', background='black',
                 fieldbackground='black', foreground='white')
+
         self.style.configure('TLabel', background='black',
                 fieldbackground='black', foreground='green')
+        self.style.configure("White.TLabel", background='black',
+                fieldbackground='black', foreground="white")
+        self.style.configure("Red.TLabel", background='black',
+                fieldbackground='black', foreground="red")
+
         self.style.configure('TPanedwindow', background='black',
                 fieldbackground='black', foreground='white')
 
         self.style.configure('TEntry', background='black',
                 fieldbackground='black', foreground='white')
+
+        self.style.map('TEntry',
+            foreground=[('pressed', 'white'),
+                        ('focus', 'white'),
+                        ('active', 'white')],
+            background=[('pressed', '!focus', 'green'),
+                        ('active', 'green')],
+            highlightcolor=[('focus', 'green'),
+                        ('!focus', 'white')],
+            activerelief=[('pressed', 'groove'),
+                    ('!pressed', 'ridge')])
+
 
         self.style.configure('TButton', background='black',
                 fieldbackground='black', foreground='white')
