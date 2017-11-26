@@ -19,7 +19,8 @@ from configuration import Configuration
 from dialog import (SettingsDialog, ViewDialog, 
                     InfoDialog, NewDirectoryDialog, HelpDialog,
                     GotoDialog, MessageYesNoDialog, MessageDialog,
-                    MessageSudoYesNoDialog)
+                    MessageSudoYesNoDialog, ChangeDirectoryDialog,
+                    OpenFileDialog, SaveFileDialog)
 
 ###################################################################
 class RunThread(threading.Thread):
@@ -268,8 +269,12 @@ class LeftPanel(ttk.Frame):
             filename = dir + '/' + file
             self.tree.config(cursor="X_cursor")
             self.tree.bind('<Double-1>', self.ignore)
+            
+            try:
+                self.master.master.rightPanel.open(file=filename)
+            except Exception as e:
+                MessageDialog(self, 'Error', '\n' + str(e) + '\n')
 
-            self.master.master.rightPanel.open(file=filename)
             self.tree.config(cursor='')
             self.tree.update()
             self.rightPanel.textPad.mark_set("insert", "1.0")
@@ -519,11 +524,15 @@ class LeftPanel(ttk.Frame):
         menu.add_command(label='Info', compound=tk.LEFT, command=self.treeGenerateInfo)
         menu.add_separator()
         menu.add_command(label="Create New Folder", compound=tk.LEFT, command=self.treeGenerateFolder)
+        menu.add_command(label="Change Folder", compound=tk.LEFT, command=self.treeGenerateChangeDir)
+        menu.add_separator()
         menu.add_command(label="Copy Item", compound=tk.LEFT, command=self.treeGenerateCopy)
         menu.add_command(label="Paste Item", compound=tk.LEFT, command=self.treeGeneratePaste)
+        menu.add_command(label="Rename Item", compound=tk.LEFT, command=self.treeGenerateRename)
+
+        menu.add_separator()
         menu.add_command(label="Delete Item", compound=tk.LEFT, command=self.treeGenerateDelete)
         menu.add_separator()
-        menu.add_command(label="Select Directory", compound=tk.LEFT, command=self.treeGenerateSelectDir)
         menu.add_command(label="Zip Folder", compound=tk.LEFT, command=self.treeZipFolder)
         menu.add_separator()
         menu.add_command(label="Refresh Tree", compound=tk.LEFT, command = self.treeGenerateRefresh)
@@ -556,26 +565,43 @@ class LeftPanel(ttk.Frame):
             self.rightPanel.setMessage('<No Selection>', 800)
 
         self.deleteFile()
+    
+    def treeGenerateRename(self):
+        if not self.selected:
+            self.rightPanel.setMessage('<No Selection>', 800)
+        
+        print('Rename .... Line 572')
 
-    def treeGenerateSelectDir(self):
+    def treeGenerateChangeDir(self):
         d = os.getcwd()
         d = self.checkPath(d)
-        directory = filedialog.askdirectory(initialdir=d)
-        if not directory:
-            return
-        try:
-            os.chdir(directory)
-            for i in self.tree.get_children():
-                self.tree.delete(i)
-            path = '.'
-            abspath = os.path.abspath(path)
-            root_node = self.tree.insert('', 'end', text=abspath, open=True, tags='folder')
-            self.process_directory(root_node, abspath)
-                
-        except Exception as e:
-            return
-            #print(str(e))
+        
+        dialog = ChangeDirectoryDialog(self, 'Change Folder', 'Select Folder')
+        result = dialog.result
+        selected = dialog.selected
+        
+        if result == 0:
+            os.chdir(d)
+            self.refreshTree()
+        else:
 
+            if selected is not None:
+                if d == selected:
+                    self.refreshTree()
+                    return
+                dir = os.getcwd() + selected
+                try:
+                    os.chdir(dir)
+                except Exception as e:
+                    self.refreshTree()
+  
+            else:
+                os.chdir(d)
+                self.refreshTree()
+
+        
+        self.master.master.master.title(os.getcwd())
+        self.refreshTree()
     
     def treeGenerateRefresh(self):
         self.refreshTree()
@@ -661,6 +687,7 @@ class RightPanel(tk.Frame):
         
         # PopUp TextPad
         self.textPad.bind("<ButtonRelease-3>", self.textPadPopUp)
+        self.textPad.bind("<ButtonRelease-1>", self.onTextPadFocus)
         
         # other binding for the textPad
         self.textPad.bind("<<Change>>", self.on_change)
@@ -835,7 +862,6 @@ class RightPanel(tk.Frame):
         textPad.bind('<Control-Key-p>', self.print)
         textPad.bind('<Control-Key-z>', self.undo)
         textPad.bind('<Control-Shift_L><Z>', self.redo)
-        #textPad.bind('<Alt><+>', self.nextTab)
         textPad.bind('<Control-Key-f>', self.showSearch)
         textPad.bind('<Control-Key-g>', self.overview)
         textPad.bind('<F12>', self.settings)
@@ -981,6 +1007,7 @@ class RightPanel(tk.Frame):
         id = self.notebook.index(self.notebook.select())
         #print(id)
         textPad = self.TEXTPADS[id]
+        textPad.clipboard = self.textPad.clipboard
         self.textPad = textPad
         self.textPad.bind("<ButtonRelease-3>", self.textPadPopUp)
         self.textPad.bind("<<Change>>", self.on_change)
@@ -1104,11 +1131,39 @@ class RightPanel(tk.Frame):
         if not file:
             dir = os.getcwd()
             dir = self.checkPath(dir)
-            filename = filedialog.askopenfilename(initialdir=dir)
+            
+            dialog = OpenFileDialog(self, 'Open', 'Select File:')
+            result = dialog.result
+            obj = dialog.selected
+            
+            if result == 0:
+                os.chdir(dir)
+                self.leftPanel.refreshTree()
+                return
+            
+            if obj is not None:
+                if '>' in obj:
+                    os.chdir(dir)
+                    self.leftPanel.refreshTree()
+                    return
+                
+                elif '/' in obj:
+                    os.chdir(dir)
+                    self.leftPanel.refreshTree()
+                    return
+                
+                else:
+                    filename = os.getcwd() + '/' + obj
+                    filename = self.checkPath(filename)
+            else:
+                os.chdir(dir)
+                self.leftPanel.refreshTree()
+                return
+
         else:
             filename = file
         
-        print(file)
+        #print(file)
         makeNew = True
         
         if filename:
@@ -1127,6 +1182,8 @@ class RightPanel(tk.Frame):
                     
                     self.textPad.delete('1.0', tk.END)
                     self.textPad.insert("1.0", text)
+                    self.leftPanel.refreshTree()
+
                     
                     self.master.master.master.title('Loading ...')
                     self.textPad.config(cursor="X_cursor")
@@ -1147,8 +1204,11 @@ class RightPanel(tk.Frame):
             except Exception as e:
                 #print(str(e))
                 MessageDialog(self, 'Error', '\n' + str(e) + '\n')
-        #    return
-    
+                self.leftPanel.refreshTree()
+                self.leftPanel.tree.focus_set()
+            return
+        
+        self.leftPanel.refreshTree()
 
     def save(self, event=None):
         if len(self.TEXTPADS) -1 == -1:
@@ -1157,8 +1217,11 @@ class RightPanel(tk.Frame):
         if self.textPad.filename == None:
             d = os.getcwd()
             d = self.checkPath(d)
-            filename = filedialog.asksaveasfilename(initialdir=d)
-        
+            dialog = SaveFileDialog(self, 'Save As', 'Enter Filename')
+            result = dialog.result
+            filename = dialog.filename
+
+
             if filename:
                 try:
                     with open(filename, 'w') as f:
@@ -1181,15 +1244,6 @@ class RightPanel(tk.Frame):
             if filename.endswith('*'):
                 filename = filename.replace('*', '')
             
-            '''
-            filename += '*'
-            file = filename.split('/')[-1]
-            self.notebook.tab(x, text=file)
-            self.textPad.filename = filename
-            print(self.textPad.filename)
-            self.update()
-            self.textPad.edit_modified(False)
-            '''
             try:
                 with open(filename, 'w') as f:
                     text = self.textPad.get("1.0",'end-1c')
@@ -1208,11 +1262,27 @@ class RightPanel(tk.Frame):
             except Exception as e:
                     MessageDialog(self, 'Error', '\n' + str(e) + '\n')
                     return
+        
+        self.textPad.focus_set()
     
     def saveAs(self, event=None):
-        d = os.getcwd()
-        d = self.checkPath(d)
-        filename = filedialog.asksaveasfilename(initialdir=d)
+
+        if len(self.TEXTPADS) -1 == -1:
+            return
+
+        dialog = SaveFileDialog(self, 'Save As', 'Enter Filename')
+        result = dialog.result
+        filename = self.checkPath(dialog.filename)
+        
+
+        if result == 0:
+            self.textPad.focus_set()
+            return
+        
+        if filename.startswith('>'):
+            filename = None
+            self.textPad.focus_set()
+            return
         
         if filename:
             try:
@@ -1230,8 +1300,12 @@ class RightPanel(tk.Frame):
                     
             except Exception as e:
                 MessageDialog(self, 'Error', '\n' + str(e) + '\n')
-                return
+                self.leftPanel.refreshTree()
 
+                return
+        
+        self.leftPanel.refreshTree()
+        self.textPad.focus_set()
 
 
     def checkPath(self, dir):
@@ -1451,7 +1525,7 @@ class RightPanel(tk.Frame):
 class CrossViper(ttk.Frame):
 
     def __init__(self, master):
-        super().__init__(master, width=1000, height=800)
+        super().__init__(master, width=1000, height=100)
         self.pack(expand=True, fill=tk.BOTH)
         self.initUI()
         self.initStyle()
@@ -1553,7 +1627,11 @@ class CrossViper(ttk.Frame):
         #self.rightPanel.pack(side=tk.RIGHT, expand=True, fill=tk.BOTH)
         
         self.leftPanel = LeftPanel(self.panedWindow, self.rightPanel)
+        
+        # to know each other for communication
         self.leftPanel.rightPanel = self.rightPanel
+        self.rightPanel.leftPanel = self.leftPanel
+        
         #self.leftPanel.pack(side=tk.LEFT, fill=tk.Y)
         
         self.panedWindow.add(self.leftPanel)
@@ -1579,8 +1657,9 @@ if __name__ == '__main__':
     root = tk.Tk()
 
     app = CrossViper(master=None)
-    app.master.title('Cross-Viper 0.1')
-    app.master.minsize(width=1000, height=800)
+    app.master.title('Cross-Viper 1.0')
+    #app.master.minsize(width=1000, height=800)
+    root.geometry("1000x800+100+100")
     
     root['bg'] = 'black'
     #root.configure(cursor = "left_ptr green")

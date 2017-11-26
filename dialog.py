@@ -100,6 +100,37 @@ class Dialog(tk.Toplevel):
 
         pass # override
 
+#########################################################
+class NewDirectoryDialog(Dialog):
+    
+    
+    def body(self, master):
+        # get configuration 
+        self.master = master
+
+        # make body
+        ttk.Label(master, text="Name of directory:").grid(row=0)
+        
+        self.e1 = tk.Entry(self.master)
+        self.e1 = tk.Entry(self.master, bg='black', fg='white')
+        self.e1.configure(cursor="xterm green")
+        self.e1.configure(insertbackground = "red")
+        self.e1.configure(highlightcolor='#448dc4')
+        self.e1.grid(row=0, column=1, sticky='nsew')
+        
+        return self.e1 # initial focus
+
+    def apply(self):
+        name = self.e1.get()
+        dir = self.CheckPath(os.getcwd())
+        dir += '/' + name
+        os.mkdir(dir)
+
+    def CheckPath(self, path):
+        if '\\' in path:
+            path = path.replace('\\', '/')
+        return path
+
 
 ######################################################################
 
@@ -545,7 +576,622 @@ class ViewDialog(tk.Toplevel):
             self.textPad.mark_set('insert', "%d.0" %(z))
             self.textPad.see(tk.INSERT)
             self.textPad.focus_force()
+
+#########################################################
+class ChangeDirectoryDialog(tk.Toplevel):
+    def __init__(self, parent, title=None, text=''):
+
+        super().__init__(parent)
+        self.transient(parent)
+        
+        self.text = text
+        
+        if title:
+            self.title(title)
+        else:
+            title='Change Directory'
+
+        self.parent = parent
+        self.text = text
+        
+        # value for get : Yes or No
+        self.result = None
+
+        body = ttk.Frame(self)
+        label1 = ttk.Label(body, text=self.text)
+        label1.configure(style="White.TLabel")
+        label1.pack()
+        self.treeview = ttk.Treeview(body)
+        self.treeview.tag_configure('row', background='black', foreground='white')
+        self.treeview.tag_configure('folder', background='black', foreground='yellow')
+        self.treeview.tag_configure('subfolder', background='black', foreground='#448dc4')
+        self.treeview.tag_configure('hidden', background='black', foreground='gray')
+        
+        self.treeview['show'] = 'tree'
+        self.treeview.bind("<Double-1>", self.OnDoubleClickTreeview)
+        self.treeview.bind("<Button-1>", self.OnClickTreeview)
+        #self.tree.bind('<<TreeviewSelect>>', self.on_select)
+        
+        
+        path = self.checkPath(os.getcwd())
+        abspath = os.path.abspath(path)
+        
+        root_node = self.treeview.insert('', 'end', text=abspath, open=True, tags='folder')
+        self.process_directory(root_node, abspath)
+
+
+        self.treeview.pack(expand=True)
+
+        body.pack(padx=5, pady=5)
+
+
+        self.buttonbox()
+
+        self.protocol("WM_DELETE_WINDOW", self.cancel)
+
+        self.geometry("+%d+%d" % (parent.winfo_rootx()+50,
+                                  parent.winfo_rooty()+50))
+
+        self.configure(bg='black')
+        
+        # variable fpr selected item
+        self.selected = None
+        
+        self.wait_window(self)
+
+    def refreshTree(self):
+        for i in self.treeview.get_children():
+            self.treeview.delete(i)
+        path = '.'
+        abspath = os.path.abspath(path)
+        root_node = self.treeview.insert('', 'end', text=abspath, open=True, tags='folder')
+        self.process_directory(root_node, abspath)
+
+        
+    def process_directory(self, parent, path):
+        try:
+            l = []
+            for p in os.listdir(path):
+                abspath = os.path.join(path, p)
+                isdir = os.path.isdir(abspath)
+
+                if isdir:
+                    item = '> /' + str(p)
+                    l.append(item)
+                    continue
+                    
+                else:
+                    continue
+                
+                # list sort ...
+            l.sort()
+            #l.reverse()
             
+            for items in l:
+                if items.startswith('>'):
+                    self.treeview.insert(parent, 'end', text=str(items), open=False, tags='subfolder')
+                elif items.startswith('.'):
+                    self.treeview.insert(parent, 'end', text=str(items), open=False, tags='hidden')                    
+                else:
+                    self.treeview.insert(parent, 'end', text=str(items), open=False, tags='row')
+       
+        except Exception as e:
+            MessageDialog(self, 'Error', '\n' + str(e) + '\n')
+            return
+        
+    def OnClickTreeview(self, event=None):
+        item = self.treeview.identify('item',event.x,event.y)
+        dir = self.treeview.item(item, 'text')
+        self.checkPath(dir)
+        
+        if '>' in dir:
+            dir = dir.replace('> ', '')
+            
+        self.selected = dir
+        
+        
+    def OnDoubleClickTreeview(self, event):
+        item = self.treeview.identify('item',event.x,event.y)
+
+        
+        if self.treeview.item(item, "text").startswith('>'):
+            root = os.getcwd()
+
+            sub = self.treeview.item(item, "text").split()[1]
+
+            dir = root + sub
+            dir = self.checkPath(dir)
+            try:
+                os.chdir(dir)
+            except Exception as e:
+                MessageDialog(self, 'Error', '\n' + str(e) + '\n')
+
+            self.selected = None
+            self.refreshTree()
+    
+        elif '/' in self.treeview.item(item, "text") or '\\' in self.treeview.item(item, "text"):
+            os.chdir('..')
+            dir = self.checkPath(os.getcwd())
+            self.refreshTree()
+            self.selected = None
+            return 'break'
+
+        else:
+            item = self.treeview.identify('item',event.x,event.y)
+            dir = self.treeview.item(item, 'text')
+            self.checkPath(dir)
+        
+            if '>' in dir:
+                dir = dir.replace('> ', '')
+                os.chdir(dir)
+
+            else:
+                return
+            
+
+        self.refreshTree()
+
+    def checkPath(self, path):
+        if '\\' in path:
+            path = path.replace('\\', '/')
+        return path
+
+    def on_select(self, event):
+        self.selected = event.widget.selection()
+
+        
+    def buttonbox(self):
+        box = ttk.Frame(self)
+        
+        b1 = ttk.Button(box, text="Ok", width=10, command=self.apply, default=tk.ACTIVE)
+        b1.pack(side=tk.LEFT, padx=5, pady=5)
+        b2 = ttk.Button(box, text="Cancel", width=10, command=self.cancel, default=tk.ACTIVE)
+        b2.pack(side=tk.LEFT, padx=5, pady=5)
+
+        box.pack()
+
+    def apply(self, event=None):
+        self.result = 1
+        self.parent.focus_set()
+        self.destroy()
+        
+
+    def cancel(self, event=None):
+        # put focus back to the parent window
+        self.result = 0
+        self.parent.focus_set()
+        self.destroy()
+        
+#########################################################
+
+#########################################################
+class OpenFileDialog(tk.Toplevel):
+    def __init__(self, parent, title=None, text=''):
+
+        super().__init__(parent)
+        self.transient(parent)
+        
+        self.text = text
+        
+        if title:
+            self.title(title)
+        else:
+            title='Open'
+
+        self.parent = parent
+        self.text = text
+        
+        # value for get : Yes or No
+        self.result = None
+
+        body = ttk.Frame(self)
+        label1 = ttk.Label(body, text=self.text)
+        label1.configure(style="White.TLabel")
+        label1.pack()
+        self.treeview = ttk.Treeview(body)
+        self.treeview.tag_configure('row', background='black', foreground='white')
+        self.treeview.tag_configure('folder', background='black', foreground='yellow')
+        self.treeview.tag_configure('subfolder', background='black', foreground='#448dc4')
+        self.treeview.tag_configure('hidden', background='black', foreground='gray')
+        
+        self.treeview['show'] = 'tree'
+        self.treeview.bind("<Double-1>", self.OnDoubleClickTreeview)
+        self.treeview.bind("<Button-1>", self.OnClickTreeview)
+        #self.tree.bind('<<TreeviewSelect>>', self.on_select)
+        
+        
+        path = self.checkPath(os.getcwd())
+        abspath = os.path.abspath(path)
+        
+        root_node = self.treeview.insert('', 'end', text=abspath, open=True, tags='folder')
+        self.process_directory(root_node, abspath)
+
+
+        self.treeview.pack(expand=True)
+
+        body.pack(padx=5, pady=5)
+
+
+        self.buttonbox()
+
+        self.protocol("WM_DELETE_WINDOW", self.cancel)
+
+        self.geometry("+%d+%d" % (parent.winfo_rootx()+50,
+                                  parent.winfo_rooty()+50))
+
+        self.configure(bg='black')
+        
+        # variable fpr selected item
+        self.selected = None
+        
+        self.wait_window(self)
+
+    def refreshTree(self):
+        for i in self.treeview.get_children():
+            self.treeview.delete(i)
+        path = '.'
+        abspath = os.path.abspath(path)
+        root_node = self.treeview.insert('', 'end', text=abspath, open=True, tags='folder')
+        self.process_directory(root_node, abspath)
+
+        
+    def process_directory(self, parent, path):
+        try:
+            l = []
+            for p in os.listdir(path):
+                abspath = os.path.join(path, p)
+                isdir = os.path.isdir(abspath)
+
+                if isdir:
+                    item = '> /' + str(p)
+                    l.append(item)
+                    continue
+                    
+                else:
+                    item = str(p)
+                    l.append(item)
+                
+                # list sort ...
+            l.sort()
+            #l.reverse()
+            
+            for items in l:
+                if items.startswith('>'):
+                    self.treeview.insert(parent, 'end', text=str(items), open=False, tags='subfolder')
+                elif items.startswith('.'):
+                    self.treeview.insert(parent, 'end', text=str(items), open=False, tags='hidden')                    
+                else:
+                    self.treeview.insert(parent, 'end', text=str(items), open=False, tags='row')
+       
+        except Exception as e:
+            MessageDialog(self, 'Error', '\n' + str(e) + '\n')
+            return
+        
+    def OnClickTreeview(self, event=None):
+        item = self.treeview.identify('item',event.x,event.y)
+        dir = self.treeview.item(item, 'text')
+        self.checkPath(dir)
+        
+        if '>' in dir:
+            dir = dir.replace('> ', '')
+            
+        self.selected = dir
+        
+        
+    def OnDoubleClickTreeview(self, event):
+        item = self.treeview.identify('item',event.x,event.y)
+        root = os.getcwd()
+
+        
+        if self.treeview.item(item, "text").startswith('>'):
+            sub = self.treeview.item(item, "text").split()[1]
+
+            dir = root + sub
+            dir = self.checkPath(dir)
+            try:
+                os.chdir(dir)
+            except Exception as e:
+                MessageDialog(self, 'Error', '\n' + str(e) + '\n')
+
+            self.selected = None
+            self.refreshTree()
+    
+        elif '/' in self.treeview.item(item, "text") or '\\' in self.treeview.item(item, "text"):
+            os.chdir('..')
+            dir = self.checkPath(os.getcwd())
+            self.refreshTree()
+            return 'break'
+
+        else:
+            item = self.treeview.identify('item',event.x,event.y)
+            obj = self.treeview.item(item, 'text')
+            self.checkPath(obj)
+            
+            self.selected = obj
+            
+            if '>' in obj:
+                obj = obj.replace('> ', '')
+                os.chdir(obj)
+
+            elif obj == root:
+                return
+            
+
+
+        self.refreshTree()
+
+    def checkPath(self, path):
+        if '\\' in path:
+            path = path.replace('\\', '/')
+        return path
+
+    def on_select(self, event):
+        self.selected = event.widget.selection()
+
+
+        
+    def buttonbox(self):
+        box = ttk.Frame(self)
+        
+        b1 = ttk.Button(box, text="Ok", width=10, command=self.apply, default=tk.ACTIVE)
+        b1.pack(side=tk.LEFT, padx=5, pady=5)
+        b2 = ttk.Button(box, text="Cancel", width=10, command=self.cancel, default=tk.ACTIVE)
+        b2.pack(side=tk.LEFT, padx=5, pady=5)
+
+        box.pack()
+
+    def apply(self, event=None):
+        self.result = 1
+        absdir = os.getcwd()
+        if not absdir == self.selected:
+
+            if self.selected == None:
+                self.parent.focus_set()
+                self.destroy()
+            
+            try:
+                os.chdir(absdir + self.selected)
+            except Exception as e:
+                self.parent.focus_set()
+                self.destroy()
+                
+        self.parent.focus_set()
+        self.destroy()
+        
+
+    def cancel(self, event=None):
+        # put focus back to the parent window
+        self.result = 0
+        self.parent.focus_set()
+        self.destroy()
+        
+#########################################################
+
+#########################################################
+class SaveFileDialog(tk.Toplevel):
+    def __init__(self, parent, title=None, text=''):
+
+        super().__init__(parent)
+        self.transient(parent)
+        
+        self.text = text
+        
+        if title:
+            self.title(title)
+        else:
+            title='Save'
+
+        self.parent = parent
+        self.text = text
+        
+        # value for get : Yes or No
+        self.result = None
+
+        body = ttk.Frame(self)
+        label1 = ttk.Label(body, text=self.text)
+        label1.configure(style="White.TLabel")
+
+        self.treeview = ttk.Treeview(body)
+        self.treeview.tag_configure('row', background='black', foreground='white')
+        self.treeview.tag_configure('folder', background='black', foreground='yellow')
+        self.treeview.tag_configure('subfolder', background='black', foreground='#448dc4')
+        self.treeview.tag_configure('hidden', background='black', foreground='gray')
+        
+        self.treeview['show'] = 'tree'
+        self.treeview.bind("<Double-1>", self.OnDoubleClickTreeview)
+        self.treeview.bind("<Button-1>", self.OnClickTreeview)
+        self.treeview.bind('<<TreeviewSelect>>', self.on_select)
+
+        
+        self.filenameBox = tk.Entry(self, bg='black', fg='white')
+        self.filenameBox.configure(cursor="xterm green")
+        self.filenameBox.configure(insertbackground = "red")
+        self.filenameBox.configure(highlightcolor='#448dc4')
+
+        
+        
+        path = self.checkPath(os.getcwd())
+        abspath = os.path.abspath(path)
+        
+        root_node = self.treeview.insert('', 'end', text=abspath, open=True, tags='folder')
+        self.process_directory(root_node, abspath)
+
+
+        body.pack(padx=5, pady=5)
+        label1.pack()
+        self.treeview.pack(expand=True)
+        self.filenameBox.pack()
+
+
+
+
+        self.buttonbox()
+
+        self.protocol("WM_DELETE_WINDOW", self.cancel)
+
+        self.geometry("+%d+%d" % (parent.winfo_rootx()+50,
+                                  parent.winfo_rooty()+50))
+
+        self.configure(bg='black')
+        
+        # variable fpr selected item
+        self.selected = None
+        
+        self.wait_window(self)
+
+    def refreshTree(self):
+        for i in self.treeview.get_children():
+            self.treeview.delete(i)
+        path = '.'
+        abspath = os.path.abspath(path)
+        root_node = self.treeview.insert('', 'end', text=abspath, open=True, tags='folder')
+        self.process_directory(root_node, abspath)
+
+        
+    def process_directory(self, parent, path):
+        try:
+            l = []
+            for p in os.listdir(path):
+                abspath = os.path.join(path, p)
+                isdir = os.path.isdir(abspath)
+
+                if isdir:
+                    item = '> /' + str(p)
+                    l.append(item)
+                    continue
+                    
+                else:
+                    item = str(p)
+                    l.append(item)
+                
+                # list sort ...
+            l.sort()
+            #l.reverse()
+            
+            for items in l:
+                if items.startswith('>'):
+                    self.treeview.insert(parent, 'end', text=str(items), open=False, tags='subfolder')
+                elif items.startswith('.'):
+                    self.treeview.insert(parent, 'end', text=str(items), open=False, tags='hidden')                    
+                else:
+                    self.treeview.insert(parent, 'end', text=str(items), open=False, tags='row')
+       
+        except Exception as e:
+            MessageDialog(self, 'Error', '\n' + str(e) + '\n')
+            return
+        
+    def OnClickTreeview(self, event=None):
+        item = self.treeview.identify('item',event.x,event.y)
+        dir = self.treeview.item(item, 'text')
+        self.checkPath(dir)
+        
+        if '>' in dir:
+            dir = dir.replace('> ', '')
+            
+        self.selected = dir
+        
+        
+    def OnDoubleClickTreeview(self, event):
+        item = self.treeview.identify('item',event.x,event.y)
+        root = os.getcwd()
+
+        
+        if self.treeview.item(item, "text").startswith('>'):
+            sub = self.treeview.item(item, "text").split()[1]
+
+            dir = root + sub
+            dir = self.checkPath(dir)
+            try:
+                os.chdir(dir)
+            except Exception as e:
+                MessageDialog(self, 'Error', '\n' + str(e) + '\n')
+
+            self.selected = None
+            self.refreshTree()
+    
+        elif '/' in self.treeview.item(item, "text") or '\\' in self.treeview.item(item, "text"):
+            os.chdir('..')
+            dir = self.checkPath(os.getcwd())
+            self.refreshTree()
+            return 'break'
+
+        else:
+            item = self.treeview.identify('item',event.x,event.y)
+            obj = self.treeview.item(item, 'text')
+            self.checkPath(obj)
+            
+            self.selected = obj
+            
+            if '>' in obj:
+                obj = obj.replace('> ', '')
+                os.chdir(obj)
+
+            elif obj == root:
+                return
+            
+
+
+        self.refreshTree()
+
+    def checkPath(self, path):
+        if '\\' in path:
+            path = path.replace('\\', '/')
+        return path
+
+    def on_select(self, event):
+        item = self.treeview.focus()
+        
+        text = self.treeview.item(item, 'text')
+
+
+        if text.startswith('>'):
+            text = ''
+        elif ('/') in text:
+            text = ''
+        else:
+            text = self.treeview.item(item, 'text')
+        
+        self.filenameBox.delete(0, 'end')
+        self.filenameBox.insert(0, text)
+
+        
+    def buttonbox(self):
+        box = ttk.Frame(self)
+        
+        b1 = ttk.Button(box, text="Ok", width=10, command=self.apply, default=tk.ACTIVE)
+        b1.pack(side=tk.LEFT, padx=5, pady=5)
+        b2 = ttk.Button(box, text="Cancel", width=10, command=self.cancel, default=tk.ACTIVE)
+        b2.pack(side=tk.LEFT, padx=5, pady=5)
+
+        box.pack()
+
+    def apply(self, event=None):
+        self.result = 1
+        filename = self.filenameBox.get()
+        
+        if filename == None or '/' in filename:
+            self.result = 0
+
+        dir = os.getcwd()
+        self.filename = dir + '/' + filename
+        
+        self.parent.focus_set()
+        self.destroy()
+            
+        
+
+    def cancel(self, event=None):
+        # put focus back to the parent window
+        self.result = 0
+        self.filename = None
+        self.parent.focus_set()
+        self.destroy()
+        
+#########################################################
+
+
+
+
 #########################################################
 class MessageYesNoDialog(tk.Toplevel):
     def __init__(self, parent, title=None, text=''):
@@ -646,7 +1292,7 @@ class MessageSudoYesNoDialog(tk.Toplevel):
 
         self.buttonbox()
 
-        self.grab_set()
+        #self.grab_set()
 
         if not self.initial_focus:
             self.initial_focus = self
@@ -723,9 +1369,8 @@ class MessageDialog(tk.Toplevel):
         body.pack(padx=5, pady=5)
 
         self.buttonbox()
-
-        self.grab_set()
-
+        #self.grab_set()
+        
         if not self.initial_focus:
             self.initial_focus = self
 
@@ -843,36 +1488,6 @@ class InfoDialog(tk.Toplevel):
         self.parent.focus_set()
         self.destroy()
 
-#########################################################
-class NewDirectoryDialog(Dialog):
-    
-    
-    def body(self, master):
-        # get configuration 
-        self.master = master
-
-        # make body
-        ttk.Label(master, text="Name of directory:").grid(row=0)
-        
-        self.e1 = tk.Entry(self.master)
-        self.e1 = tk.Entry(self.master, bg='black', fg='white')
-        self.e1.configure(cursor="xterm green")
-        self.e1.configure(insertbackground = "red")
-        self.e1.configure(highlightcolor='#448dc4')
-        self.e1.grid(row=0, column=1, sticky='nsew')
-        
-        return self.e1 # initial focus
-
-    def apply(self):
-        name = self.e1.get()
-        dir = self.CheckPath(os.getcwd())
-        dir += '/' + name
-        os.mkdir(dir)
-
-    def CheckPath(self, path):
-        if '\\' in path:
-            path = path.replace('\\', '/')
-        return path
 
 
 ##########################################################
