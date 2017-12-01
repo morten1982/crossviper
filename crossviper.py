@@ -684,15 +684,7 @@ class RightPanel(tk.Frame):
         self.textPad.configure(yscrollcommand=textScrollY.set)
         textScrollY.config(command=self.textPad.yview)
         textScrollY.pack(side=tk.RIGHT, fill=tk.Y)
-        
-        # PopUp TextPad
-        self.textPad.bind("<ButtonRelease-3>", self.textPadPopUp)
-        self.textPad.bind("<ButtonRelease-1>", self.onTextPadFocus)
-        
-        # other binding for the textPad
-        self.textPad.bind("<<Change>>", self.on_change)
-        self.textPad.bind("<Configure>", self.on_change)
-        
+                
         self.linenumber = TextLineNumbers(self.frame1, width=35, bg='black')
         self.linenumber.attach(self.textPad)
         self.linenumber.pack(side="left", fill="y")
@@ -758,28 +750,18 @@ class RightPanel(tk.Frame):
         zoomOutButton.pack(side=tk.LEFT)
         self.createToolTip(zoomOutButton, 'Zoom Out')
 
-
         settingsIcon = tk.PhotoImage(file=self.dir + 'images/settings.png')
         settingsButton = ttk.Button(rightButtonFrame, image=settingsIcon, command=self.settings)
         settingsButton.image = settingsIcon
         settingsButton.pack(side=tk.LEFT)
         self.createToolTip(settingsButton, 'Show Settings')
 
-        #searcher = tk.Entry(rightButtonFrame)
-        #searcher.pack(side=tk.LEFT)
-
         runIcon = tk.PhotoImage(file=self.dir + 'images/run.png')
         runButton = ttk.Button(rightButtonFrame, image=runIcon, command=self.run)
         runButton.image = runIcon
         runButton.pack(side=tk.RIGHT)
-        self.createToolTip(runButton, 'Run File')
-        
-        self.runMenu = tk.Menu(self, tearoff=0, background='#000000',foreground='white',
-                activebackground='green', activeforeground='white')
-        self.runMenu.add_command(label="Run", command=self.run)
-        self.runMenu.add_command(label="Run with sudo", command=self.runSudo)
         runButton.bind('<Button-3>', self.popupRun)
-                
+        self.createToolTip(runButton, 'Run File')
         
         terminalIcon = tk.PhotoImage(file=self.dir + 'images/terminal.png')
         terminalButton = ttk.Button(rightButtonFrame, image=terminalIcon, command=self.terminal)
@@ -823,9 +805,14 @@ class RightPanel(tk.Frame):
 
         # Shortcuts
         self.textPad = self.shortcutBinding(self.textPad)
-    
+        
 
     def popupRun(self, event):
+        self.runMenu = tk.Menu(self, tearoff=0, background='#000000',foreground='white',
+                activebackground='green', activeforeground='white')
+        self.runMenu.add_command(label="Run", command=self.run)
+        self.runMenu.add_command(label="Run with sudo", command=self.runSudo)
+
         self.runMenu.post(event.x_root, event.y_root)
 
 
@@ -848,9 +835,7 @@ class RightPanel(tk.Frame):
                     self.textPad.filename = filename
                     self.update()
                     self.textPad.edit_modified(False)
-            
-            # self.textPad.filename now with '*' ... change that on save !!
-            # to do !! ....
+    
             
     def shortcutBinding(self, textPad):
         textPad.bind('<F1>', self.help)
@@ -868,11 +853,33 @@ class RightPanel(tk.Frame):
         textPad.bind('<Alt-Up>', self.zoomIn)
         textPad.bind('<Alt-Down>', self.zoomOut)
         textPad.bind('<Alt-Right>', self.nextTab)
+        textPad.bind('<Alt-Left>', self.changeToTreeview)
         textPad.bind('<Alt-F4>', self.quit)
         textPad.bind('<<Modified>>', self.onTextPadModified)
 
+        # PopUp TextPad
+        textPad.bind("<ButtonRelease-3>", self.textPadPopUp)
+        textPad.bind("<ButtonRelease-1>", self.onTextPadFocus)
+        
+        # other binding for the textPad
+        textPad.bind("<<Change>>", self.on_change)
+        textPad.bind("<Configure>", self.on_change)
+
 
         return textPad
+
+    def get_all_children(self, tree, item=""):
+        children = tree.get_children(item)
+        for child in children:
+            children += self.get_all_children(tree, child)
+        return children    
+
+    def changeToTreeview(self, event):
+        children = self.get_all_children(self.leftPanel.tree)
+        item = children[0]
+        self.leftPanel.tree.selection_set(item)
+        self.leftPanel.tree.focus_set()
+
     
     def showSearch(self, event=None):
         self.searchBox.focus_set()
@@ -1000,24 +1007,23 @@ class RightPanel(tk.Frame):
 
     def tabChanged(self, event=None):
         tabs = self.notebook.tabs()
+        
         if not tabs:
             return
         
-    
         id = self.notebook.index(self.notebook.select())
-        #print(id)
         textPad = self.TEXTPADS[id]
         textPad.clipboard = self.textPad.clipboard
         self.textPad = textPad
-        self.textPad.bind("<ButtonRelease-3>", self.textPadPopUp)
-        self.textPad.bind("<<Change>>", self.on_change)
-        self.textPad.bind("<Configure>", self.on_change)
 
         
         self.linenumber = self.LINENUMBERS[id]
         self.textPad.entry = self.autocompleteEntry
  
+        # bind the linenumber widget
         self.linenumber.bind('<ButtonRelease-1>', self.linenumberSelect)
+        self.linenumber.bind('<ButtonRelease-3>', self.linenumberPopUp)
+
 
         #print(self.textPad.filename)
         filename = self.textPad.filename
@@ -1097,11 +1103,15 @@ class RightPanel(tk.Frame):
 
         textPad = TextPad(frame, undo=True, maxundo=-1, autoseparators=True)
         textPad.pack(side=tk.RIGHT, expand=True, fill=tk.BOTH)
-        textScrollY = ttk.Scrollbar(textPad)
+        textScrollY = tk.Scrollbar(textPad, bg="#424242", troughcolor="#2d2d2d", highlightcolor="green", activebackground="green", highlightbackground="gray")
         textScrollY.config(cursor="double_arrow")
         textPad.configure(yscrollcommand=textScrollY.set)
         textScrollY.config(command=textPad.yview)
+        textScrollY.config(cursor="left_ptr")
+        textPad.configure(yscrollcommand=textScrollY.set)
+        textScrollY.config(command=textPad.yview)
         textScrollY.pack(side=tk.RIGHT, fill=tk.Y)
+
         
         linenumber = TextLineNumbers(frame, width=35, bg='black')
         linenumber.attach(textPad)
@@ -1167,16 +1177,22 @@ class RightPanel(tk.Frame):
         makeNew = True
         
         if filename:
-            if self.textPad.filename == None:
+            index = None
+            if self.textPad.filename == None or self.textPad.filename == 'noname':
                 makeNew = False
+                index = self.notebook.index(self.notebook.select())
+
             try:
                 with open(filename, 'r') as f:
                     text = f.read()
                     if makeNew:
                         self.new()
-                    l = len(self.TEXTPADS) - 1
-                    #print('l', l)
-                    self.notebook.select(l)
+                    
+                    if index == None:
+                        index = len(self.TEXTPADS) - 1
+                        #print('l', l)
+                        self.notebook.select(index)
+                    self.notebook.select(index)
                     self.update()
                     self.tabChanged()
                     
@@ -1194,7 +1210,7 @@ class RightPanel(tk.Frame):
                     self.textPad.update()
                     self.textPad.filename = filename
                     file = filename.split('/')[-1]
-                    self.notebook.tab(l, text=file)
+                    self.notebook.tab(index, text=file)
                     self.master.master.master.title(self.textPad.filename)
                     self.textPad.updateAutoCompleteList()
                     
