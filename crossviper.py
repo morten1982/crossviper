@@ -20,7 +20,8 @@ from dialog import (SettingsDialog, ViewDialog,
                     InfoDialog, NewDirectoryDialog, HelpDialog,
                     GotoDialog, MessageYesNoDialog, MessageDialog,
                     MessageSudoYesNoDialog, ChangeDirectoryDialog,
-                    OpenFileDialog, SaveFileDialog)
+                    OpenFileDialog, SaveFileDialog, RenameDialog,
+                    ZipFolderDialog)
 
 ###################################################################
 class RunThread(threading.Thread):
@@ -116,6 +117,7 @@ class LeftPanel(ttk.Frame):
         self.tree.bind("<Button-1>", self.OnClickTreeview)
         self.tree.bind('<<TreeviewSelect>>', self.on_select)
         self.tree.bind("<ButtonRelease-3>", self.treePopUp)
+        self.tree.bind('<Alt-Right>', self.changeToTextPad)
         
         
         abspath = os.path.abspath(path)
@@ -159,6 +161,9 @@ class LeftPanel(ttk.Frame):
         self.sourceItem = None
         self.destinationItem = None
         
+    def changeToTextPad(self, event=None):
+        if self.rightPanel.textPad:
+            self.rightPanel.textPad.focus_set()
 
     def createToolTip(self, widget, text):
         toolTip = ToolTip(widget)
@@ -535,6 +540,8 @@ class LeftPanel(ttk.Frame):
         menu.add_separator()
         menu.add_command(label="Zip Folder", compound=tk.LEFT, command=self.treeZipFolder)
         menu.add_separator()
+        menu.add_command(label="Open Terminal", compound=tk.LEFT, command = self.treeGenerateTerminal)
+        menu.add_separator()
         menu.add_command(label="Refresh Tree", compound=tk.LEFT, command = self.treeGenerateRefresh)
         menu.tk_popup(event.x_root, event.y_root, 0)
 
@@ -570,8 +577,12 @@ class LeftPanel(ttk.Frame):
         if not self.selected:
             self.rightPanel.setMessage('<No Selection>', 800)
         
-        print('Rename .... Line 572')
-
+        obj = self.tree.selection()
+        item = self.tree.item(obj)['text']
+        
+        RenameDialog(self, title='Rename Item', item=item)
+        self.refreshTree()
+        
     def treeGenerateChangeDir(self):
         d = os.getcwd()
         d = self.checkPath(d)
@@ -606,25 +617,29 @@ class LeftPanel(ttk.Frame):
     def treeGenerateRefresh(self):
         self.refreshTree()
     
-    def zipfolder(self, foldername, target_dir):            
-        zipobj = zipfile.ZipFile(foldername + '.zip', 'w', zipfile.ZIP_DEFLATED)
-        rootlen = len(target_dir) + 1
-        for base, dirs, files in os.walk(target_dir):
-            for file in files:
-                fn = os.path.join(base, file)
-                zipobj.write(fn, fn[rootlen:])
+
     
     def treeZipFolder(self):
-        dialog = simpledialog.askstring('Make Zip-File from current directory', 'current directory\n' + os.getcwd() + 
-                                        '\n\nEnter filename: ')
-        if not dialog:
-            return
-            
-        filename = dialog
+        #dialog = simpledialog.askstring('Make Zip-File from current directory', 'current directory\n' + os.getcwd() + 
+        #                                '\n\nEnter filename: ')
         
-        dir = os.getcwd()
-        self.zipfolder(filename, dir)
+        ZipFolderDialog(self, 'Zip-Folder')
+        
+            
+        #filename = dialog
+        
+        #dir = os.getcwd()
+        #self.zipfolder(filename, dir)
         self.refreshTree()
+    
+    def treeGenerateTerminal(self):
+        c = Configuration()     # -> in configuration.py
+        system = c.getSystem()
+        terminalCommand = c.getTerminal(system)
+
+        thread = RunThread(terminalCommand)
+        thread.start()
+
         
         
 ######################################################################
@@ -1466,7 +1481,7 @@ class RightPanel(tk.Frame):
     def interpreter(self):
         c = Configuration()     # -> in configuration.py
         system = c.getSystem()
-        interpreterCommand = c.getInterpreter(system).format(self.textPad.filename)
+        interpreterCommand = c.getInterpreter(system)
 
         thread = RunThread(interpreterCommand)
         thread.start()
@@ -1475,7 +1490,7 @@ class RightPanel(tk.Frame):
     def terminal(self):
         c = Configuration()     # -> in configuration.py
         system = c.getSystem()
-        terminalCommand = c.getTerminal(system).format(self.textPad.filename)
+        terminalCommand = c.getTerminal(system)
 
         thread = RunThread(terminalCommand)
         thread.start()

@@ -5,6 +5,7 @@ from configuration import Configuration
 import configparser
 import os
 import sys 
+import zipfile
 
 
 class Dialog(tk.Toplevel):
@@ -47,8 +48,6 @@ class Dialog(tk.Toplevel):
         
         self.wait_window(self)
 
-    #
-    # construction hooks
 
     def body(self, master):
         # create dialog body.  return widget that should have
@@ -103,16 +102,14 @@ class Dialog(tk.Toplevel):
 #########################################################
 class NewDirectoryDialog(Dialog):
     
-    
     def body(self, master):
         # get configuration 
-        self.master = master
-
+        
         # make body
         ttk.Label(master, text="Name of directory:").grid(row=0)
         
-        self.e1 = tk.Entry(self.master)
-        self.e1 = tk.Entry(self.master, bg='black', fg='white')
+        self.e1 = tk.Entry(master)
+        self.e1 = tk.Entry(master, bg='black', fg='white')
         self.e1.configure(cursor="xterm green")
         self.e1.configure(insertbackground = "red")
         self.e1.configure(highlightcolor='#448dc4')
@@ -132,7 +129,111 @@ class NewDirectoryDialog(Dialog):
         return path
 
 
-######################################################################
+############################################################
+
+class RenameDialog(Dialog):
+    
+    def __init__(self, parent, title=None, item=None):
+        self.item = item
+        super().__init__(parent, title)
+    
+    def body(self, master):
+
+        # make body
+        ttk.Label(master, text='Current name: ').grid(row=1, column=0)
+        ttk.Label(master, text=self.item).grid(row=1, column=1)
+        ttk.Label(master, text="New name: ").grid(row=2)
+        
+        self.e1 = tk.Entry(master)
+        self.e1 = tk.Entry(master, bg='black', fg='white')
+        self.e1.configure(cursor="xterm green")
+        self.e1.configure(insertbackground = "red")
+        self.e1.configure(highlightcolor='#448dc4')
+        self.e1.grid(row=2, column=1, sticky='nsew')
+        
+        return self.e1 # initial focus
+
+    def apply(self):
+        lastName = self.getLastName(self.item)
+        cwd = self.CheckPath(os.getcwd()) + '/'
+        
+        oldFullPath = cwd + lastName 
+        
+        new = self.e1.get()
+        
+        newFullPath = cwd + new
+        
+        try:
+            os.rename(oldFullPath, newFullPath)
+        except Exception as e:
+            print(str(e))
+        
+    def getLastName(self, item):
+        # get LastName
+        if item.startswith('>'):
+            item = item.replace('> ', '')
+            if ('/') in item:
+                item = item.split('/')[-1]
+            return item
+        elif item.startswith('/'):
+            item = item.split('/')[-1]
+            return item
+        else:
+            return item
+
+    def CheckPath(self, path):
+        if '\\' in path:
+            path = path.replace('\\', '/')
+        return path
+
+
+#############################################################
+############################################################
+
+class ZipFolderDialog(Dialog):
+    
+    def body(self, master):
+
+        # make body
+        ttk.Label(master, text='Current Folder: ').grid(row=1, column=0)
+        ttk.Label(master, text=os.getcwd()).grid(row=1, column=1)
+        ttk.Label(master, text="Zip Filename: ").grid(row=2, column=0)
+        ttk.Label(master, text='.zip').grid(row=2, column=2)
+        
+        self.e1 = tk.Entry(master)
+        self.e1 = tk.Entry(master, bg='black', fg='white')
+        self.e1.configure(cursor="xterm green")
+        self.e1.configure(insertbackground = "red")
+        self.e1.configure(highlightcolor='#448dc4')
+        self.e1.grid(row=2, column=1, sticky='nsew')
+        
+        return self.e1 # initial focus
+
+    def apply(self):
+        dir = self.CheckPath(os.getcwd()) 
+        filename = self.e1.get() + '.zip'
+        
+        self.zipfolder(filename, dir)
+
+    def zipfolder(self, filename, target_dir):            
+        zipobj = zipfile.ZipFile(filename, 'w', zipfile.ZIP_DEFLATED)
+        rootlen = len(target_dir) + 1
+        for base, dirs, files in os.walk(target_dir):
+            for file in files:
+                fn = os.path.join(base, file)
+                zipobj.write(fn, fn[rootlen:])
+
+
+
+    def CheckPath(self, path):
+        if '\\' in path:
+            path = path.replace('\\', '/')
+        return path
+
+
+#############################################################
+
+
 
 class SettingsDialog(Dialog):
     
