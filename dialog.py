@@ -28,7 +28,6 @@ class Dialog(tk.Toplevel):
 
         self.buttonbox()
 
-        self.grab_set()
 
         if not self.initial_focus:
             self.initial_focus = self
@@ -59,8 +58,8 @@ class Dialog(tk.Toplevel):
         # add standard button box. override if you don't want the
         # standard buttons
 
-        box = tk.Frame(self)
-        box.configure(bg='black')
+        box = ttk.Frame(self)
+        #box.configure(bg='black')
         
         w = ttk.Button(box, text="OK", width=10, command=self.ok, default=tk.ACTIVE)
         w.pack(side=tk.LEFT, padx=5, pady=5)
@@ -99,6 +98,11 @@ class Dialog(tk.Toplevel):
 
         pass # override
 
+    def CheckPath(self, path):
+        if '\\' in path:
+            path = path.replace('\\', '/')
+        return path
+
 #########################################################
 class NewDirectoryDialog(Dialog):
     
@@ -123,10 +127,7 @@ class NewDirectoryDialog(Dialog):
         dir += '/' + name
         os.mkdir(dir)
 
-    def CheckPath(self, path):
-        if '\\' in path:
-            path = path.replace('\\', '/')
-        return path
+
 
 
 ############################################################
@@ -181,14 +182,8 @@ class RenameDialog(Dialog):
         else:
             return item
 
-    def CheckPath(self, path):
-        if '\\' in path:
-            path = path.replace('\\', '/')
-        return path
-
 
 #############################################################
-############################################################
 
 class ZipFolderDialog(Dialog):
     
@@ -225,15 +220,381 @@ class ZipFolderDialog(Dialog):
 
 
 
-    def CheckPath(self, path):
-        if '\\' in path:
-            path = path.replace('\\', '/')
-        return path
+#############################################################
+
+class MessageDialog(Dialog):
+    def __init__(self, parent, title, text=None):
+        self.text = text
+        super().__init__(parent, title)
+    
+    def body(self, master):
+        label1 = ttk.Label(master, text=self.text)
+        label1.configure(style="White.TLabel")
+        label1.pack()
+        
+        return label1
+    
+        
+    def buttonbox(self):
+        box = ttk.Frame(self)
+        
+        b1 = ttk.Button(box, text="Ok", width=10, command=self.cancel, default=tk.ACTIVE)
+        b1.pack(side=tk.LEFT, padx=5, pady=5)
+
+        box.pack()
+        
+
+    def cancel(self, event=None):
+        # put focus back to the parent window
+        self.result = 0
+        self.parent.focus_set()
+        self.destroy()
 
 
 #############################################################
 
 
+class MessageYesNoDialog(Dialog):
+    def __init__(self, parent, title, text=None):
+        self.text = text
+        super().__init__(parent, title)
+    
+    def body(self, master):
+        label1 = ttk.Label(master, text=self.text)
+        label1.configure(style="White.TLabel")
+        label1.pack()
+        
+        return label1
+    
+        
+    def buttonbox(self):
+        box = ttk.Frame(self)
+        
+        b1 = ttk.Button(box, text="Yes", width=10, command=self.apply, default=tk.ACTIVE)
+        b1.pack(side=tk.LEFT, padx=5, pady=5)
+        b2 = ttk.Button(box, text="No", width=10, command=self.cancel, default=tk.ACTIVE)
+        b2.pack(side=tk.LEFT, padx=5, pady=5)
+
+        box.pack()
+
+    def apply(self, event=None):
+        self.result = 1
+        self.parent.focus_set()
+        self.destroy()
+        
+
+    def cancel(self, event=None):
+        # put focus back to the parent window
+        self.result = 0
+        self.parent.focus_set()
+        self.destroy()
+
+
+#############################################################
+class MessageSudoYesNoDialog(Dialog):
+
+    def __init__(self, parent, title, text):
+        self.text = text
+        super().__init__(parent, title)
+        
+    def body(self, master):
+        label1 = ttk.Label(master, text=self.text)
+        label1.configure(style="White.TLabel")
+        label1.pack()
+        self.pw = tk.Entry(master, bg='black', fg='white')
+        self.pw.configure(cursor="xterm green")
+        self.pw.configure(insertbackground = "red")
+        self.pw.configure(highlightcolor='#448dc4')
+        self.pw.config(show="*")
+        self.pw.pack()
+    
+        
+    def buttonbox(self):
+        box = ttk.Frame(self)
+        
+        b1 = ttk.Button(box, text="Ok", width=10, command=self.apply, default=tk.ACTIVE)
+        b1.pack(side=tk.LEFT, padx=5, pady=5)
+        b2 = ttk.Button(box, text="Cancel", width=10, command=self.cancel)
+        b2.pack(side=tk.LEFT, padx=5, pady=5)
+
+        box.pack()
+
+    def apply(self, event=None):
+        self.result = 1
+        self.password = self.pw.get()
+        self.parent.focus_set()
+        self.destroy()
+        
+
+    def cancel(self, event=None):
+        # put focus back to the parent window
+        self.result = 0
+        self.parent.focus_set()
+        self.destroy()
+
+#############################################################
+
+class InfoDialog(Dialog):
+
+    def __init__(self, parent, title, text, directory, file, size):
+        self.text = text
+        self.directory = directory
+        self.file = file
+        self.size = size
+        super().__init__(parent, title)
+
+    def body(self, master):
+        label1 = ttk.Label(master, text=' ' + self.text + ' ')
+        label1.configure(style="Red.TLabel")
+        label1.pack()
+        label1b = ttk.Label(master, text=' ')
+        label1b.configure(style="White.TLabel")
+        label1b.pack()
+        
+
+    
+        if self.directory:
+            label2a = ttk.Label(master, text='Type: directory\n', anchor=tk.W)
+            label2a.configure(style="White.TLabel")
+            label2a.pack()
+        else:
+            label2a = ttk.Label(master, text='Type: file\n', anchor=tk.W)
+            label2a.configure(style="White.TLabel")
+            label2a.pack()
+        if self.file:
+            label3a = ttk.Label(master, text='Size: ' + str(self.size) + ' bytes\n', anchor=tk.W)
+            label3a.configure(style="White.TLabel")
+            label3a.pack()
+            
+        return label1
+    
+        
+    def buttonbox(self):
+        box = ttk.Frame(self)
+        
+        w = ttk.Button(box, text="OK", width=10, command=self.cancel, default=tk.ACTIVE)
+        w.pack(side=tk.LEFT, padx=5, pady=5)
+        box.pack()
+
+
+    def cancel(self, event=None):
+
+        # put focus back to the parent window
+        self.parent.focus_set()
+        self.destroy()
+
+#############################################################
+class HelpDialog(Dialog):
+    def __init__(self, parent, title):
+        super().__init__(parent, title)
+    
+    def body(self, master):
+        tabControl = ttk.Notebook(master)
+        
+        ##
+        # Tab What is
+        ##
+        tab1 = ttk.Frame(tabControl)
+        tabControl.add(tab1, text='What is CrossViper ?')
+        tabControl.pack(expand=1, fill='both')
+        
+        readonlyWhatIs = tkst.ScrolledText(tab1, bg='black', fg='white', wrap='none')
+        readonlyWhatIs.pack()
+        
+        textWhatIs = '''
+        CrossViper - The cross platform Python IDE
+        
+        CrossViper is an Editor and Integrated Development Environment (IDE)
+        for the "Python Programming Language".
+        
+        It shows the "python source code" colored (syntax highlighting) and 
+        helps you to code with its own auto-complete function.
+        
+        It can run the codefile (requirement is, that you have installed 
+        Python on your OS)
+        It can also run the "Python Interpreter" and a terminal window 
+        (specific for your current OS) -> this can be modified in the 
+        settings (-> which where saved in crossviper.ini => it's a text file)
+        
+        On the bottom-right, you find two buttons => one for searching the 
+        current file and the other to analyse the code 
+        (-> shows you the classes and functions)
+        
+        On the left side it has its own file-explorer to 
+        copy, delete, rename ... files and folders. Use the pop-up menu
+        (right mousebutton).
+        '''
+        
+        readonlyWhatIs.insert(1.0, textWhatIs)
+        readonlyWhatIs.configure(state='disabled')
+
+
+        ##
+        # Tab Shortcut
+        ##
+        
+        tab2 = ttk.Frame(tabControl)
+        tabControl.add(tab2, text='Shortcuts')
+        tabControl.pack(expand=1, fill='both')
+        
+        readonlyShortcuts = tkst.ScrolledText(tab2, bg='black', fg='white', wrap='none')
+        readonlyShortcuts.pack()
+
+        
+        textShortcut = '''
+        Shortcuts:
+        
+        New File        -       Ctrl + N
+        Open File       -       Ctrl + O
+        Save File       -       Ctrl + S
+        SaveAs          -       Ctrl + Shift + S
+        Print           -       Ctrl + P
+        Quit CrossViper -       Alt + F4
+        Undo            -       Ctrl + Z
+        Redo            -       Ctrl + Shift + Z
+        Copy            -       Ctrl + C
+        Cut             -       Ctrl + X
+        Paste           -       Ctrl + V
+        Select All      -       Ctrl + A
+        Change Tab      -       Alt + Right
+        Autocomplete    -       Tab
+        Search          -       Ctrl + F
+        Class Overview  -       Ctrl + G
+        Show Settings   -       F12
+        Zoom In         -       Alt + Up
+        Zoom Out        -       Alt + Down
+        Set Cursor      -       Ctrl + Left / Ctrl + Right
+        Show Help       -       F1
+        
+        '''
+        
+        readonlyShortcuts.insert(1.0, textShortcut)
+        readonlyShortcuts.configure(state='disabled')
+
+        ##
+        # Tab About
+        ##
+        tab3 = ttk.Frame(tabControl)
+        tabControl.add(tab3, text='About')
+        tabControl.pack(expand=1, fill='both')
+        
+        readonlyAbout = tkst.ScrolledText(tab3, bg='black', fg='white', wrap='none')
+        readonlyAbout.pack()
+
+        textAbout = '''
+        CrossViper 1.0
+        
+        
+        Programmed 2017 by morbidMo
+        
+        
+        I's open source software. You can modify and use the sourcecode -
+        make it better or fork it on github.com:
+        
+        
+        https://github.com/morten1982/crossviper
+        
+        
+        no guarantee of using it - it's your own risk :)
+        
+        
+        CrossViper was completely coded in Python just using tkinter
+        
+        Requirements are : pygments (-> for syntax highlighting)
+        To install pygments : pip3 install pygments
+        
+        '''
+        readonlyAbout.insert(1.0, textAbout)
+        readonlyAbout.configure(state='disabled')
+
+        
+        
+    def buttonbox(self):
+        box = ttk.Frame(self)
+        
+        w = ttk.Button(box, text="OK", width=10, command=self.cancel, default=tk.ACTIVE)
+        w.pack(side=tk.BOTTOM, padx=5, pady=5)
+        box.pack()
+        buttonbox = tk.Frame(self)
+
+    def cancel(self, event=None):
+
+        # put focus back to the parent window
+        self.parent.focus_set()
+        self.destroy()
+
+#############################################################
+class GotoDialog(Dialog):
+    def __init__(self, parent, title=None):
+        self.Pad = parent
+        super().__init__(parent, title)
+
+    def body(self, master):
+        # make body
+        ttk.Label(master, text="Goto Linenumber:").grid(row=0)
+        
+        #self.e1 = tk.Entry(master)
+        
+        index = int(self.Pad.index("end-1c linestart").split('.')[0])
+        
+        var = tk.StringVar()
+        var.set("1")
+        self.spinbox = tk.Spinbox(master, from_= 1, to=index, textvariable=var, bg='black', fg='white', width=5)
+        self.spinbox.grid(row=0, column=1, sticky='nsew')
+        self.spinbox.configure(cursor="xterm green")
+        self.spinbox.configure(insertbackground = "red")
+        self.spinbox.configure(highlightcolor='#448dc4')
+        self.spinbox.configure(buttonbackground='green')
+        self.spinbox.selection('range', tk.INSERT, tk.END)
+        
+        return self.spinbox # initial focus
+
+    def buttonbox(self):
+        # add standard button box. override if you don't want the
+        # standard buttons
+
+        box = ttk.Frame(self)
+
+        w = ttk.Button(box, text="OK", width=10, command=self.apply, default=tk.ACTIVE)
+        w.pack(side=tk.LEFT, padx=5, pady=5)
+        w = ttk.Button(box, text="Cancel", width=10, command=self.cancel)
+        w.pack(side=tk.LEFT, padx=5, pady=5)
+
+
+        box.pack()
+        
+
+    def apply(self, event=None):
+        number = self.spinbox.get()
+        if number.isnumeric():
+            number = int(number)
+        else:
+            return
+        
+        #print('number', number)
+        
+        try:
+            self.Pad.mark_set("insert", "%d.0" % (number))
+        except Exception as e:
+            print(str(e))
+            
+        self.Pad.see(tk.INSERT)
+        self.Pad.focus_set()
+        
+        self.cancel()
+        
+    
+    def cancel(self, event=None):
+
+        # put focus back to the parent window
+        self.parent.focus_set()
+        self.destroy()
+
+
+
+##########################################################
+
+#############################################################
 
 class SettingsDialog(Dialog):
     
@@ -273,6 +634,8 @@ class SettingsDialog(Dialog):
         self.e1.configure(cursor='left_ptr')
         self.e1.configure(insertbackground = "red")
         self.e1.configure(highlightcolor='#448dc4')
+        self.e1Label = ttk.Label(master, text = '{} = Filename')
+        #self.e1Label.configure(style='White.TLabel')
 
         self.e2 = tk.Entry(master, bg='black', fg='white', width=40)
         self.e2.configure(cursor='left_ptr')
@@ -304,6 +667,7 @@ class SettingsDialog(Dialog):
 
         self.e1.grid(row=0, column=1, sticky='ew')
         self.e1.insert(0, self.runCommand)
+        self.e1Label.grid(row=0, column=2, sticky='ew')
         self.e2.grid(row=1, column=1, sticky='ew')
         self.e2.insert(0, self.terminalCommand)
         self.e3.grid(row=2, column=1, sticky='ew')
@@ -441,10 +805,6 @@ class SettingsDialog(Dialog):
             config.write(f)
         
 
-    def CheckPath(self, path):
-        if '\\' in path:
-            path = path.replace('\\', '/')
-        return path
 
 #########################################################
 
@@ -1186,8 +1546,9 @@ class SaveFileDialog(tk.Toplevel):
         dir = self.treeview.item(item, 'text')
         self.checkPath(dir)
         
-        if '>' in dir:
-            dir = dir.replace('> ', '')
+        if dir:
+            if '>' in dir:
+                dir = dir.replace('> ', '')
             
         self.selected = dir
         
@@ -1235,8 +1596,9 @@ class SaveFileDialog(tk.Toplevel):
         self.refreshTree()
 
     def checkPath(self, path):
-        if '\\' in path:
-            path = path.replace('\\', '/')
+        if path:
+            if '\\' in path:
+                path = path.replace('\\', '/')
         return path
 
     def on_select(self, event):
@@ -1289,508 +1651,3 @@ class SaveFileDialog(tk.Toplevel):
         self.destroy()
         
 #########################################################
-
-
-
-
-#########################################################
-class MessageYesNoDialog(tk.Toplevel):
-    def __init__(self, parent, title=None, text=''):
-
-        super().__init__(parent)
-        self.transient(parent)
-        
-        self.text = text
-        
-        if title:
-            self.title(title)
-        else:
-            title='Message'
-
-        self.parent = parent
-        self.text = text
-        
-        # value for get : Yes or No
-        self.result = None
-
-        body = ttk.Frame(self)
-        self.initial_focus = self.body(body)
-        body.pack(padx=5, pady=5)
-
-        self.buttonbox()
-
-        self.grab_set()
-
-        if not self.initial_focus:
-            self.initial_focus = self
-
-        self.protocol("WM_DELETE_WINDOW", self.cancel)
-
-        self.geometry("+%d+%d" % (parent.winfo_rootx()+50,
-                                  parent.winfo_rooty()+50))
-
-        self.configure(bg='black')
-
-
-        self.initial_focus.focus_set()
-        self.wait_window(self)
-        
-        
-
-    def body(self, master):
-        self.master = master
-        label1 = ttk.Label(self, text=self.text)
-        label1.configure(style="White.TLabel")
-        label1.pack()
-    
-        
-    def buttonbox(self):
-        box = ttk.Frame(self)
-        
-        b1 = ttk.Button(box, text="Yes", width=10, command=self.apply, default=tk.ACTIVE)
-        b1.pack(side=tk.LEFT, padx=5, pady=5)
-        b2 = ttk.Button(box, text="No", width=10, command=self.cancel, default=tk.ACTIVE)
-        b2.pack(side=tk.LEFT, padx=5, pady=5)
-
-        box.pack()
-
-    def apply(self, event=None):
-        self.result = 1
-        self.parent.focus_set()
-        self.destroy()
-        
-
-    def cancel(self, event=None):
-        # put focus back to the parent window
-        self.result = 0
-        self.parent.focus_set()
-        self.destroy()
-        
-#########################################################
-class MessageSudoYesNoDialog(tk.Toplevel):
-    def __init__(self, parent, title=None, text=''):
-
-        super().__init__(parent)
-        self.transient(parent)
-        
-        self.text = text
-        
-        if title:
-            self.title(title)
-        else:
-            title='Message'
-
-        self.parent = parent
-        self.text = text
-        
-        # value for get : Yes or No
-        self.result = None
-        self.password = ''
-
-        body = ttk.Frame(self)
-        self.initial_focus = self.body(body)
-        body.pack(padx=5, pady=5)
-
-        self.buttonbox()
-
-        #self.grab_set()
-
-        if not self.initial_focus:
-            self.initial_focus = self
-
-        self.protocol("WM_DELETE_WINDOW", self.cancel)
-
-        self.geometry("+%d+%d" % (parent.winfo_rootx()+50,
-                                  parent.winfo_rooty()+50))
-
-        self.configure(bg='black')
-
-
-        self.initial_focus.focus_set()
-        self.wait_window(self)
-        
-        
-
-    def body(self, master):
-        self.master = master
-        label1 = ttk.Label(self, text=self.text)
-        label1.configure(style="White.TLabel")
-        label1.pack()
-        self.pw = tk.Entry(self, bg='black', fg='white')
-        self.pw.configure(cursor="xterm green")
-        self.pw.configure(insertbackground = "red")
-        self.pw.configure(highlightcolor='#448dc4')
-        self.pw.pack()
-    
-        
-    def buttonbox(self):
-        box = ttk.Frame(self)
-        
-        b1 = ttk.Button(box, text="Ok", width=10, command=self.apply, default=tk.ACTIVE)
-        b1.pack(side=tk.LEFT, padx=5, pady=5)
-        b2 = ttk.Button(box, text="Cancel", width=10, command=self.cancel)
-        b2.pack(side=tk.LEFT, padx=5, pady=5)
-
-        box.pack()
-
-    def apply(self, event=None):
-        self.result = 1
-        self.password = self.pw.get()
-        self.parent.focus_set()
-        self.destroy()
-        
-
-    def cancel(self, event=None):
-        # put focus back to the parent window
-        self.result = 0
-        self.parent.focus_set()
-        self.destroy()
-
-        
-#########################################################
-class MessageDialog(tk.Toplevel):
-    def __init__(self, parent, title=None, text=''):
-
-        super().__init__(parent)
-        self.transient(parent)
-        
-        self.text = text
-        
-        if title:
-            self.title(title)
-        else:
-            title='Error'
-
-        self.parent = parent
-        self.text = text
-        
-
-        body = ttk.Frame(self)
-        self.initial_focus = self.body(body)
-        body.pack(padx=5, pady=5)
-
-        self.buttonbox()
-        #self.grab_set()
-        
-        if not self.initial_focus:
-            self.initial_focus = self
-
-        self.protocol("WM_DELETE_WINDOW", self.cancel)
-
-        self.geometry("+%d+%d" % (parent.winfo_rootx()+50,
-                                  parent.winfo_rooty()+50))
-
-        self.configure(bg='black')
-
-
-        self.initial_focus.focus_set()
-        self.wait_window(self)
-        
-        
-
-    def body(self, master):
-        self.master = master
-        label1 = ttk.Label(self, text=self.text)
-        label1.configure(style="White.TLabel")
-        label1.pack()
-    
-        
-    def buttonbox(self):
-        box = ttk.Frame(self)
-        
-        b1 = ttk.Button(box, text="Ok", width=10, command=self.cancel, default=tk.ACTIVE)
-        b1.pack(side=tk.LEFT, padx=5, pady=5)
-
-        box.pack()
-        
-
-    def cancel(self, event=None):
-        # put focus back to the parent window
-        self.result = 0
-        self.parent.focus_set()
-        self.destroy()
-
-#########################################################
-
-class InfoDialog(tk.Toplevel):
-    def __init__(self, parent, title=None, text=None, directory=None, file=None, size=None):
-
-        super().__init__(parent)
-        self.transient(parent)
-
-        if title:
-            self.title(title)
-
-        self.parent = parent
-        self.text = text
-        self.directory = directory
-        self.file = file
-        self.size = size
-        
-        self.result = None
-
-        body = ttk.Frame(self)
-        self.initial_focus = self.body(body)
-        body.pack(padx=5, pady=5)
-
-        self.buttonbox()
-
-        self.grab_set()
-
-        if not self.initial_focus:
-            self.initial_focus = self
-
-        self.protocol("WM_DELETE_WINDOW", self.cancel)
-
-        self.geometry("+%d+%d" % (parent.winfo_rootx()+50,
-                                  parent.winfo_rooty()+50))
-
-        self.configure(bg='black')
-
-
-        self.initial_focus.focus_set()
-        self.wait_window(self)
-        
-        
-
-    def body(self, master):
-        self.master = master
-        label1 = ttk.Label(self, text=self.text)
-        label1.configure(style="Red.TLabel")
-        label1.pack()
-        
-
-    
-        if self.directory:
-            label2 = ttk.Label(master, text='type: directory')
-            label2.configure(style="White.TLabel")
-            label2.pack()
-        else:
-            label2 = ttk.Label(master, text='type: file')
-            label2.configure(style="White.TLabel")
-            label2.pack()
-        if self.file:
-            label3 = ttk.Label(master, text='size: ' + str(self.size) + " bytes")
-            label3.configure(style="White.TLabel")
-            label3.pack()
-    
-        
-    def buttonbox(self):
-        box = ttk.Frame(self)
-        
-        w = ttk.Button(box, text="OK", width=10, command=self.cancel, default=tk.ACTIVE)
-        w.pack(side=tk.LEFT, padx=5, pady=5)
-        box.pack()
-
-
-    def cancel(self, event=None):
-
-        # put focus back to the parent window
-        self.parent.focus_set()
-        self.destroy()
-
-
-
-##########################################################
-class HelpDialog(tk.Toplevel):
-    def __init__(self, parent, title="Help", textPad=None):
-        super().__init__(parent)
-        self.transient(parent)
-
-        if title:
-            self.title(title)
-
-        self.parent = parent
-
-        body = ttk.Frame(self)
-        self.initial_focus = self.body(body)
-        body.pack(padx=5, pady=5)
-
-        self.buttonbox()
-
-        self.grab_set()
-
-        if not self.initial_focus:
-            self.initial_focus = self
-
-        self.protocol("WM_DELETE_WINDOW", self.cancel)
-
-        self.geometry("+%d+%d" % (parent.winfo_rootx()+50,
-                                  parent.winfo_rooty()+50))
-
-        
-        self.configure(bg='black')
-        
-        self.initial_focus.focus_set()
-        self.wait_window(self)
-        
-        
-
-    def body(self, master):
-        self.master = master
-        readonlyHelp = tkst.ScrolledText(self, bg='black', fg='white')
-        readonlyHelp.pack()
-
-        
-        text = '''
-        CrossViper - The Cross-Platform Python IDE
-        
-        
-        Shortcuts:
-        
-        
-        New File        -       Ctrl + N
-        Open File       -       Ctrl + O
-        Save File       -       Ctrl + S
-        SaveAs          -       Ctrl + Shift + S
-        Print           -       Ctrl + P
-        Quit CrossViper -       Alt + F4
-        Undo            -       Ctrl + Z
-        Redo            -       Ctrl + Shift + Z
-        Copy            -       Ctrl + C
-        Cut             -       Ctrl + X
-        Paste           -       Ctrl + V
-        Select All      -       Ctrl + A
-        Change Tab      -       Alt + Right
-        Search          -       Ctrl + F
-        Class Overview  -       Ctrl + G
-        Show Settings   -       F12
-        Zoom In         -       Alt + Up
-        Zoom Out        -       Alt + Down
-        Set Cursor      -       Ctrl + Left / Ctrl + Right
-        Show Help       -       F1
-        
-
-        programmed 2017 by morbidMo
-
-        '''
-        
-        readonlyHelp.insert(1.0, text)
-        readonlyHelp.configure(state='disabled')
-
-    def buttonbox(self):
-        box = ttk.Frame(self)
-        
-        w = ttk.Button(box, text="OK", width=10, command=self.cancel, default=tk.ACTIVE)
-        w.pack(side=tk.BOTTOM, padx=5, pady=5)
-        box.pack()
-        buttonbox = tk.Frame(self)
-
-    def cancel(self, event=None):
-
-        # put focus back to the parent window
-        self.parent.focus_set()
-        self.destroy()
-
-########################################################
-class GotoDialog(tk.Toplevel):
-
-    def __init__(self, parent, title="Goto"):
-        super().__init__(parent)
-        self.transient(parent)
-        
-        self.Pad = parent
-        self.configure(bg='black')
-
-        
-        if not self.Pad:
-            self.cancel()
-        
-        if title:
-            self.title(title)
-
-        self.parent = parent
-
-        body = ttk.Frame(self)
-        self.initial_focus = self.body(body)
-        body.pack(padx=5, pady=5)
-        
-
-        self.buttonbox()
-
-        self.grab_set()
-
-        if not self.initial_focus:
-            self.initial_focus = self
-
-        self.protocol("WM_DELETE_WINDOW", self.cancel)
-
-        self.geometry("+%d+%d" % (parent.winfo_rootx()+50,
-                                  parent.winfo_rooty()+50))
-        
-
-
-        self.initial_focus.focus_set()
-        self.wait_window(self)
-
-    def doReturn(self, event=None):
-        print('RETURN')
-    
-    def body(self, master):
-        # get configuration 
-        self.master = master
-
-        # make body
-        ttk.Label(master, text="Goto Linenumber:").grid(row=0)
-        
-        #self.e1 = tk.Entry(master)
-        
-        index = int(self.Pad.index("end-1c linestart").split('.')[0])
-        
-        var = tk.StringVar()
-        var.set("1")
-        self.spinbox = tk.Spinbox(master, from_= 1, to=index, textvariable=var, bg='black', fg='white', width=5)
-        self.spinbox.grid(row=0, column=1, sticky='nsew')
-        self.spinbox.configure(cursor="xterm green")
-        self.spinbox.configure(insertbackground = "red")
-        self.spinbox.configure(highlightcolor='#448dc4')
-        self.spinbox.configure(buttonbackground='green')
-        self.spinbox.selection('range', tk.INSERT, tk.END)
-        
-        return self.spinbox # initial focus
-
-    def buttonbox(self):
-        # add standard button box. override if you don't want the
-        # standard buttons
-
-        box = ttk.Frame(self)
-
-        w = ttk.Button(box, text="OK", width=10, command=self.apply, default=tk.ACTIVE)
-        w.pack(side=tk.LEFT, padx=5, pady=5)
-        w = ttk.Button(box, text="Cancel", width=10, command=self.cancel)
-        w.pack(side=tk.LEFT, padx=5, pady=5)
-
-
-        box.pack()
-
-
-
-    def apply(self, event=None):
-        number = self.spinbox.get()
-        if number.isnumeric():
-            number = int(number)
-        else:
-            return
-        
-        #print('number', number)
-        
-        try:
-            self.Pad.mark_set("insert", "%d.0" % (number))
-        except Exception as e:
-            print(str(e))
-            
-        self.Pad.see(tk.INSERT)
-        self.Pad.focus_set()
-        
-        self.cancel()
-        
-    
-    def cancel(self, event=None):
-
-        # put focus back to the parent window
-        self.parent.focus_set()
-        self.destroy()
-
-
-
-##########################################################

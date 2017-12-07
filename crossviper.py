@@ -925,7 +925,7 @@ class RightPanel(tk.Frame):
             return
     
     def help(self, event=None):
-        help = HelpDialog(self, "Help", self.textPad)
+        help = HelpDialog(self, "Help")
         self.textPad.focus_set()
 
 
@@ -1340,11 +1340,12 @@ class RightPanel(tk.Frame):
 
 
     def checkPath(self, dir):
-        if '\\' in dir:
-            path = dir.replace('\\', '/')
-        else:
-            path = dir
-        return path
+        if dir:
+            if '\\' in dir:
+                path = dir.replace('\\', '/')
+            else:
+                path = dir
+            return path
 
     
     def print(self, event=None):
