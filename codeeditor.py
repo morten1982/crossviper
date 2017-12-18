@@ -39,7 +39,7 @@ class TextLineNumbers(tk.Canvas):
             if dline is None: break
             y = dline[1]
             linenum = str(i).split(".")[0]
-            self.create_text(2,y,anchor="nw", font=self.font, text=linenum, fill='white')
+            self.create_text(1,y,anchor="nw", font=self.font, text=linenum, fill='white')
             i = self.textwidget.index("%s+1line" % i)
         
         
@@ -93,7 +93,7 @@ class TextPad(tk.Text):
         self.bind('<Tab>', self.tab)
         self.bind('<BackSpace>', self.backtab)
         self.bind('<KeyRelease>', self.highlight, add='+')
-        self.bind('<KeyPress>', self.correctThisLine)
+        self.bind('<KeyRelease>', self.correctThisLine, add='+')
         #self.bind('<KeyPress-Return>', self.getDoublePoint)
         self.bind('<KeyRelease-Down>', self.correctLine)
         self.bind('<KeyRelease-Up>', self.correctLineUp)
@@ -168,69 +168,42 @@ class TextPad(tk.Text):
         '''
         char = event.char
         key = event.keycode
+        sym = event.keysym
         
         # debugging ... :)
         #print(char)
         #print(key)
         
         self.list = []
-        system = platform.system().lower()
-        if system == 'windows':
-            # Space     Arrowkeys                                           Shift        Ctrl         Alt
-            if (key==32) or (key==37) or (key==38) or (key==39) or (key==40) or (key==16) or (key==17) or (key==18):
+        if (sym=='Space') or (sym=='Up') or (sym=='Down') or (sym=='Left') or (sym=='Right') \
+            or (sym=='Shift_L') or (sym=='Shift_R') or (sym=='Control_R') or (sym=='Control_R') \
+            or (sym=='Alt_L'):
                 # set label and variables to none
                 self.entry.config(text='---')
                 self.list = []
                 self.charstring = ''
-            elif(char == '.') or (char == '(') or (char == ')') or (char=='"') or (char=="'") or \
-                             (char==',') or (char=='='):
+        
+        elif(char == '.') or (char == '(') or (char == ')') or (char=='"') or (char=="'") or \
+            (char==',') or (char=='='):
                 self.entry.config(text='---')
                 self.list = []
                 self.charstring = ''
-
-            else:
-                self.charstring += char
-                for item in self.autocompleteList:
-                    if item.startswith(self.charstring):
-                        self.list.append(item)
-                if self.list:
-                    self.entry.config(text=self.list[0])                            
-                else:
-                    self.entry.config(text='---')
-
-                if len(self.list) == 3:
-                    self.entry.config(text=self.list[0])
-        elif system == 'linux':
-            # Space     Arrowkeys                      -> Shift        Ctrl         Alt                                         
-            if (key==65) or (key==111) or (key==113) or (key==114) or (key==116) or (key==50) \
-             or (key==62) or (key==37) or (key==105) or (key==64) or (key==108):
-                
-                # set label and variables to none
-                self.entry.config(text='---')
-                self.list = []
-                self.charstring = ''
-            elif(char == '.') or (char == '(') or (char == ')') or (char=='"') or (char=="'") or \
-                             (char==',') or (char=='='):
-                self.entry.config(text='---')
-                self.list = []
-                self.charstring = ''
-
-            else:
-                self.charstring += char
-                for item in self.autocompleteList:
-                    if item.startswith(self.charstring):
-                        self.list.append(item)
-                if self.list:
-                    self.entry.config(text=self.list[0])                            
-                else:
-                    self.entry.config(text='---')
-
-                if len(self.list) == 3:
-                    self.entry.config(text=self.list[0])
-
+        
+        else:
+            self.charstring += char
             
-        #print(self.charstring)
+            for item in self.autocompleteList:
+                if item.startswith(self.charstring):
+                    self.list.append(item)
+            
+            if self.list:
+                self.entry.config(text=self.list[0])                            
+            else:
+                self.entry.config(text='---')
 
+            if len(self.list) == 3:
+                self.entry.config(text=self.list[0])
+                            
         
     def paste(self, event=None):
         '''
@@ -347,16 +320,140 @@ class TextPad(tk.Text):
     def correctThisLine(self, event=None):
         ' to do   !!    -> event for <Key-Release>'
         key = event.keycode
+        sym = event.keysym
+        #print(key)
+        #print(sym)
+        # parenleft parenright () bracketleft bracketright [] braceleft braceright {}
+        
         line = int(self.index(tk.INSERT).split('.')[0])
         line_text = self.get("%d.%d" % (line, 0), "%d.end" % (line))
+        
+        #for token, content in lex(line, PythonLexer()):
 
-        if key == 51:
+
+        if key == 51:   # -> #
             if line > 0:
                 self.highlight(lineNumber=line)
-
-
         
-    
+        self.tag_configure("braceHighlight", foreground="red")
+                
+        # paren ()
+        if sym == 'parenleft':
+            x = self.isBalanced(line_text)
+            if x == False:
+                z = line_text.rfind('(')
+            else:
+                z = False
+            
+            if z:
+                self.tag_add("braceHighlight", "%d.%d"%(line, z), "%d.%d"%(line, z+1)) 
+            else:
+                self.tag_remove('braceHighlight', "%d.0"%(line), '%d.end'%(line))
+        
+        elif sym == 'parenright':
+            x = self.isBalanced(line_text)
+            if x == False:
+                z = line_text.rfind(')')
+            else:
+                z = False
+            
+            if z:
+                self.tag_add("braceHighlight", "%d.%d"%(line, z), "%d.%d"%(line, z+1)) 
+            else:
+                self.tag_remove('braceHighlight', "%d.0"%(line), '%d.end'%(line))
+        
+        # bracket []
+        elif sym == 'bracketleft':
+            x = self.isBalanced(line_text)
+            if x == False:
+                z = line_text.rfind('[')
+            else:
+                z = False
+            
+            if z:
+                self.tag_add("braceHighlight", "%d.%d"%(line, z), "%d.%d"%(line, z+1)) 
+            else:
+                self.tag_remove('braceHighlight', "%d.0"%(line), '%d.end'%(line))
+        
+        elif sym == 'bracketright':
+            x = self.isBalanced(line_text)
+            if x == False:
+                z = line_text.rfind(']')
+            else:
+                z = False
+            
+            if z:
+                self.tag_add("braceHighlight", "%d.%d"%(line, z), "%d.%d"%(line, z+1)) 
+            else:
+                self.tag_remove('braceHighlight', "%d.0"%(line), '%d.end'%(line))
+        
+        # brace {}
+        elif sym == 'braceleft':
+            x = self.isBalanced(line_text)
+            if x == False:
+                z = line_text.rfind('{')
+            else:
+                z = False
+            
+            if z:
+                self.tag_add("braceHighlight", "%d.%d"%(line, z), "%d.%d"%(line, z+1)) 
+            else:
+                self.tag_remove('braceHighlight', "%d.0"%(line), '%d.end'%(line))
+        
+        elif sym == 'braceright':
+            x = self.isBalanced(line_text)
+            if x == False:
+                z = line_text.rfind('}')
+            else:
+                z = False
+            
+            if z:
+                self.tag_add("braceHighlight", "%d.%d"%(line, z), "%d.%d"%(line, z+1)) 
+            else:
+                self.tag_remove('braceHighlight', "%d.0"%(line), '%d.end'%(line))
+
+
+        else:
+            return
+        
+    def isBalanced(self, txt):
+        braced = 0
+        for ch in txt:
+            if (ch == '(') or (ch == '[') or (ch == '{'): 
+                braced += 1
+            if (ch == ')') or (ch == ']') or (ch == '}'):
+                braced -= 1
+                if braced < 0: return False
+        return braced == 0
+
+
+    def isBalancedParen(self, txt):
+        braced = 0
+        for ch in txt:
+            if ch == '(': braced += 1
+            if ch == ')':
+                braced -= 1
+                if braced < 0: return False
+        return braced == 0
+
+    def isBalancedBracket(self, txt):
+        braced = 0
+        for ch in txt:
+            if ch == '[': braced += 1
+            if ch == ']':
+                braced -= 1
+                if braced < 0: return False
+        return braced == 0
+
+    def isBalancedBrace(self, txt):
+        braced = 0
+        for ch in txt:
+            if ch == '{': braced += 1
+            if ch == '}':
+                braced -= 1
+                if braced < 0: return False
+        return braced == 0
+
     
     def tab(self, event):
         '''
@@ -396,6 +493,8 @@ class TextPad(tk.Text):
                 if len(chars) >= 4:
                     self.delete("insert-4c", "insert")
                     return 'break'
+        
+        self.correctThisLine(event)
     
     def highlightOpen(self, text):
         index = self.index(tk.INSERT).split(".")
@@ -522,7 +621,6 @@ class TextPad(tk.Text):
             self.mark_set("range_end", "range_start + %dc" % len(content))
             self.tag_add(str(token), "range_start", "range_end")
             self.mark_set("range_start", "range_end")
-            
     
     def highlightAll(self, event=None):
         '''

@@ -591,9 +591,6 @@ class GotoDialog(Dialog):
         self.destroy()
 
 
-
-##########################################################
-
 #############################################################
 
 class SettingsDialog(Dialog):
@@ -1425,8 +1422,7 @@ class OpenFileDialog(tk.Toplevel):
         self.result = 0
         self.parent.focus_set()
         self.destroy()
-        
-#########################################################
+
 
 #########################################################
 class SaveFileDialog(tk.Toplevel):
@@ -1642,7 +1638,6 @@ class SaveFileDialog(tk.Toplevel):
         self.destroy()
             
         
-
     def cancel(self, event=None):
         # put focus back to the parent window
         self.result = 0
