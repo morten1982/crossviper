@@ -336,60 +336,62 @@ class TextPad(tk.Text):
                 self.highlight(lineNumber=line)
         
         self.tag_configure("braceHighlight", foreground="red")
+        self.tag_configure('parenHighlight', foreground='red')
+        self.tag_configure('bracketHighlight', foreground='red')
                 
         # paren ()
         if sym == 'parenleft':
-            x = self.isBalanced(line_text)
+            x = self.isBalancedParen(line_text)
             if x == False:
                 z = line_text.rfind('(')
             else:
                 z = False
             
             if z:
-                self.tag_add("braceHighlight", "%d.%d"%(line, z), "%d.%d"%(line, z+1)) 
+                self.tag_add("parenHighlight", "%d.%d"%(line, z), "%d.%d"%(line, z+1)) 
             else:
-                self.tag_remove('braceHighlight', "%d.0"%(line), '%d.end'%(line))
+                self.tag_remove('parenHighlight', "%d.0"%(line), '%d.end'%(line))
         
         elif sym == 'parenright':
-            x = self.isBalanced(line_text)
+            x = self.isBalancedParen(line_text)
             if x == False:
                 z = line_text.rfind(')')
             else:
                 z = False
             
             if z:
-                self.tag_add("braceHighlight", "%d.%d"%(line, z), "%d.%d"%(line, z+1)) 
+                self.tag_add("parenHighlight", "%d.%d"%(line, z), "%d.%d"%(line, z+1)) 
             else:
-                self.tag_remove('braceHighlight', "%d.0"%(line), '%d.end'%(line))
+                self.tag_remove('parenHighlight', "%d.0"%(line), '%d.end'%(line))
         
         # bracket []
         elif sym == 'bracketleft':
-            x = self.isBalanced(line_text)
+            x = self.isBalancedBracket(line_text)
             if x == False:
                 z = line_text.rfind('[')
             else:
                 z = False
             
             if z:
-                self.tag_add("braceHighlight", "%d.%d"%(line, z), "%d.%d"%(line, z+1)) 
+                self.tag_add("bracketHighlight", "%d.%d"%(line, z), "%d.%d"%(line, z+1)) 
             else:
-                self.tag_remove('braceHighlight', "%d.0"%(line), '%d.end'%(line))
+                self.tag_remove('bracketHighlight', "%d.0"%(line), '%d.end'%(line))
         
         elif sym == 'bracketright':
-            x = self.isBalanced(line_text)
+            x = self.isBalancedBracket(line_text)
             if x == False:
                 z = line_text.rfind(']')
             else:
                 z = False
             
             if z:
-                self.tag_add("braceHighlight", "%d.%d"%(line, z), "%d.%d"%(line, z+1)) 
+                self.tag_add("bracketHighlight", "%d.%d"%(line, z), "%d.%d"%(line, z+1)) 
             else:
-                self.tag_remove('braceHighlight', "%d.0"%(line), '%d.end'%(line))
+                self.tag_remove('bracketHighlight', "%d.0"%(line), '%d.end'%(line))
         
         # brace {}
         elif sym == 'braceleft':
-            x = self.isBalanced(line_text)
+            x = self.isBalancedBrace(line_text)
             if x == False:
                 z = line_text.rfind('{')
             else:
@@ -401,7 +403,7 @@ class TextPad(tk.Text):
                 self.tag_remove('braceHighlight', "%d.0"%(line), '%d.end'%(line))
         
         elif sym == 'braceright':
-            x = self.isBalanced(line_text)
+            x = self.isBalancedBrace(line_text)
             if x == False:
                 z = line_text.rfind('}')
             else:
