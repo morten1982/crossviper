@@ -290,7 +290,7 @@ class LeftPanel(ttk.Frame):
             # step 2
             self.refreshTree()
             self.tree.update()
-            self.tree.after(1000, self.bindit)
+            self.tree.after(500, self.bindit)
         
         self.refreshTree()
     
