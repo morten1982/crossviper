@@ -104,6 +104,7 @@ class LeftPanel(ttk.Frame):
 
         self.tree = ttk.Treeview(self)
 
+        self.tree.tag_configure('pythonFile', background='black', foreground='green')
         self.tree.tag_configure('row', background='black', foreground='white')
         self.tree.tag_configure('folder', background='black', foreground='yellow')
         self.tree.tag_configure('subfolder', background='black', foreground='#448dc4')
@@ -200,6 +201,8 @@ class LeftPanel(ttk.Frame):
                     self.tree.insert(parent, 'end', text=str(items), open=False, tags='subfolder')
                 elif items.startswith('.'):
                     self.tree.insert(parent, 'end', text=str(items), open=False, tags='hidden')                    
+                elif items.endswith('.py') or items.endswith('.pyw'):
+                    self.tree.insert(parent, 'end', text=str(items), open=False, tags='pythonFile')
                 else:
                     self.tree.insert(parent, 'end', text=str(items), open=False, tags='row')
        
