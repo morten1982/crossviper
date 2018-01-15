@@ -9,6 +9,7 @@ A Python IDE made with tkinter.
 
 # Features
 - > Autocomplete with Tkinter Text-Widget, backtab, indent, linenumbers, syntax highlighting
+- > Brace matching included
 - > Sourcecode analyzing
 - > Terminal window 
 - > Filebrowser included
