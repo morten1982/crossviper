@@ -79,7 +79,7 @@ class TextPad(tk.Text):
         
         self.filename = None
         self.tabWidth = 4
-        self.clipboard = ''
+        self.clipboard = None
         self.entry = None
         
         self.fontSize = 13
@@ -209,18 +209,32 @@ class TextPad(tk.Text):
         '''
             paste method
         '''
+        if self.clipboard == None:
+            root = tk.Tk()                          # make tk instance
+            root.withdraw()                         # don't display
+            self.clipboard = root.clipboard_get()   # get clipboard
+            root.clipboard_clear()                  # clear clipboard
+            
         index = str(self.index(tk.INSERT))
         code = self.clipboard
-        codelines = code.splitlines()
-        for item in codelines:
-            self.insert(tk.INSERT, item)
-            self.insert(tk.INSERT, '\n')
-            index = self.index('insert linestart')
-            line = index.split('.')[0]
-            line = int(line) - 1
-            self.highlight(lineNumber=line)
-            self.see(tk.INSERT)
+        print(code)
+        try:
+            codelines = code.splitlines()
+            for item in codelines:
+                self.insert(tk.INSERT, item)
+                self.insert(tk.INSERT, '\n')
+                index = self.index('insert linestart')
+                line = index.split('.')[0]
+                line = int(line) - 1
+                self.highlight(lineNumber=line)
+                self.see(tk.INSERT)
+        except:
+            self.clipboard = None
+            
+        self.clipboard = None
+        
         return 'break'
+            
     
     def copy(self, event=None):
         '''
@@ -229,6 +243,7 @@ class TextPad(tk.Text):
         if self.tag_ranges("sel"):
             self.clipboard = self.get(tk.SEL_FIRST, tk.SEL_LAST)
             return 'break'
+
     
     def cut(self, event=None):
         '''
@@ -237,7 +252,6 @@ class TextPad(tk.Text):
         if self.tag_ranges("sel"):
             self.clipboard = self.get(tk.SEL_FIRST, tk.SEL_LAST)
             self.delete(tk.SEL_FIRST, tk.SEL_LAST)
-        else:
             return 'break'
 
 
