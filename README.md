@@ -29,4 +29,4 @@ only tkinter is used with python 3.x
  - > tabs are ordered in a stack -> you can close only the last opened tab
  
  # news
- - > codeeditor clipboard managing improved
+ - > codeeditor clipboard management improved
