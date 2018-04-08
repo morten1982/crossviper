@@ -1252,6 +1252,7 @@ class RightPanel(tk.Frame):
             d = os.getcwd()
             d = self.checkPath(d)
             dialog = SaveFileDialog(self, 'Save As', 'Enter Filename')
+            self.leftPanel.refreshTree()
             result = dialog.result
             filename = dialog.filename
 
@@ -1298,19 +1299,22 @@ class RightPanel(tk.Frame):
                     return
         
         self.textPad.focus_set()
-    
+        self.leftPanel.refreshTree()
+        
     def saveAs(self, event=None):
 
         if len(self.TEXTPADS) -1 == -1:
             return
 
         dialog = SaveFileDialog(self, 'Save As', 'Enter Filename')
+        self.leftPanel.refreshTree()
         result = dialog.result
         filename = self.checkPath(dialog.filename)
         
 
         if result == 0:
             self.textPad.focus_set()
+            self.rightPanel.refreshTree()
             return
         
         if filename.startswith('>'):
