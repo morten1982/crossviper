@@ -996,11 +996,15 @@ class RightPanel(tk.Frame):
     
     def textPadHighlightAll(self):
         text = self.textPad.get("1.0", "end")
+        
+        lines = text.count('\n')
+        overlord = self.master.master.master
+        
         self.textPad.delete('1.0', tk.END)
         self.textPad.insert("1.0", text)
-        self.master.master.master.title('Loading ...')
+        overlord.title('Loading ...')
         self.textPad.config(cursor="X_cursor")
-        self.textPad.highlightAll()
+        self.textPad.highlightAll2(lines, overlord)
         self.textPad.config(cursor='xterm')
         self.textPad.update()
     
@@ -1201,6 +1205,15 @@ class RightPanel(tk.Frame):
                 index = self.notebook.index(self.notebook.select())
 
             try:
+                # count lines first
+                linesInFile = 0
+                theFile = open(filename, "r")
+                while 1:
+                    buffer = theFile.read(8192*1024)
+                    if not buffer: break
+                    linesInFile += buffer.count('\n')
+                theFile.close()
+                
                 with open(filename, 'r') as f:
                     text = f.read()
                     if makeNew:
@@ -1219,17 +1232,19 @@ class RightPanel(tk.Frame):
                     self.leftPanel.refreshTree()
 
                     
-                    self.master.master.master.title('Loading ...')
+                    overlord = self.master.master.master
+                    
+                    overlord.title('Loading ...')
                     self.textPad.config(cursor="X_cursor")
                     self.textPad.update()
-                    
-                    self.textPad.highlightAll()
+                    #print(linesInFile)
+                    self.textPad.highlightAll2(linesInFile, overlord)
                     self.textPad.config(cursor='xterm')
                     self.textPad.update()
                     self.textPad.filename = filename
                     file = filename.split('/')[-1]
                     self.notebook.tab(index, text=file)
-                    self.master.master.master.title(self.textPad.filename)
+                    overlord.title(self.textPad.filename)
                     self.textPad.updateAutoCompleteList()
                     
                     self.tabChanged()

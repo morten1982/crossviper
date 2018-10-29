@@ -653,6 +653,24 @@ class TextPad(tk.Text):
             self.update()
             i += 1
 
+    def highlightAll2(self, linesInFile, overlord, event=None):
+        '''
+            highlight whole document (when loading a file) ... this can taking a few seconds
+            if the file is big ..... no better solution found
+        '''
+        
+        code = self.get("1.0", "end-1c")
+        #print(code)
+        i = 1
+        for line in code.splitlines():
+            self.index("%d.0" %i)
+            self.highlight(lineNumber=i)
+            percent = i/linesInFile*100
+            percent = round(percent,2)
+            overlord.title('Loading ... ' + str(percent) + ' %')
+            i += 1
+
+
     
     def highlightAllOpen(self, code):
         pass
@@ -732,5 +750,7 @@ if __name__ == '__main__':
     app.master.title('Text-Widget with Autocomplete-Label + BackTab + Indent + Syntax Highlighting with pygments')
     app.master.minsize(width=800, height=600)    
     app.mainloop()
+
+
 
 
