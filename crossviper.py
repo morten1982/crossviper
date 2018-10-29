@@ -1213,6 +1213,8 @@ class RightPanel(tk.Frame):
                     if not buffer: break
                     linesInFile += buffer.count('\n')
                 theFile.close()
+                if linesInFile == 0:
+                    linesInFile = 1
                 
                 with open(filename, 'r') as f:
                     text = f.read()
