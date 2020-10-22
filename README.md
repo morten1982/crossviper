@@ -30,3 +30,7 @@ only tkinter is used with python 3.x
  
  # news
  - > loading a file now has a percent display
+ 
+- Check out the better version:
+
+https://github.com/morten1982/mopad
